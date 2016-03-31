@@ -22,7 +22,7 @@ app.main = {
     totalScore: 0,
 
     // new property for sound module
-    sound: undefined, // required - loaded by main.js
+    // sound: undefined, // required - loaded by main.js
 
 	//  properties
     WIDTH : 1024,
@@ -43,7 +43,7 @@ app.main = {
       END: 5,
     }),
 
-    vec: {},
+    player: {},
 
     // methods
 	init : function() {
@@ -62,9 +62,9 @@ app.main = {
 
     // load level
     this.reset();
-
-    this.vec.x = this.canvas.width/2;
-    this.vec.y = this.canvas.height/2;
+	
+	this.createPlayer();
+	console.log("Created player");
 
 		// start the game loop
 		this.update();
@@ -96,27 +96,10 @@ app.main = {
     this.ctx.globalAlpha = 1.0;
     this.drawHUD(this.ctx);
 
-    this.drawPlayer(this.ctx);
-
-    // move up using 'w' key
-    if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
-      this.vec.y -= 2;
-    }
-
-    // move down using 's' key
-    if(myKeys.keydown[myKeys.KEYBOARD.KEY_S]){
-      this.vec.y += 2;
-    }
-
-    // move right using 'd' key
-    if(myKeys.keydown[myKeys.KEYBOARD.KEY_D]){
-      this.vec.x += 2;
-    }
-
-    // move left using 'a' key
-    if(myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
-      this.vec.x -= 2;
-    }
+	this.handlePlayer(this.dt);
+	
+    // this.drawPlayer(this.ctx);
+	this.drawPlayer(this.ctx);
 
 		// iv) draw debug info
 		if (this.debug){
@@ -158,7 +141,7 @@ app.main = {
   },
 
   doMouseDown: function(e){
-    this.sound.playBGAudio();
+    // this.sound.playBGAudio();
 
     // unpause on a click
     // just to make sure we never get stuck in a paused state
@@ -207,11 +190,11 @@ app.main = {
     this.update();
 
     // restart audio
-    this.sound.playBGAudio();
+    // this.sound.playBGAudio();
   },
 
   stopBGAudio: function(){
-    this.sound.stopBGAudio();
+    // this.sound.stopBGAudio();
   },
 
   toggleDebug: function(){
@@ -221,8 +204,45 @@ app.main = {
   drawPlayer: function(ctx){
     ctx.save();
     ctx.fillStyle = "red";
-    ctx.fillRect(this.vec.x, this.vec.y, 100, 100);
+    ctx.fillRect(this.player.pos.x, this.player.pos.y, 100, 100);
     ctx.restore();
+  },
+  
+  createPlayer: function(){  
+	this.player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.width/2);
+	this.player.vel = new Victor(0,0);
+	this.player.acc = new Victor(0,0);
+	this.player.speed = 5;
+	this.player.friction = 0.95;
+	Object.seal(this.player);
+  },
+  
+  handlePlayer: function(dt){
+	
+	  // move up using 'w' key
+    if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
+      this.player.pos.y -= 2;
+    }
+
+    // move down using 's' key
+    if(myKeys.keydown[myKeys.KEYBOARD.KEY_S]){
+      this.player.pos.y += 2;
+    }
+
+    // move right using 'd' key
+    if(myKeys.keydown[myKeys.KEYBOARD.KEY_D]){
+		this.player.vel.add(Victor(1,0));
+    }
+
+    // move left using 'a' key
+    if(myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
+		this.player.vel.add(Victor(-1,0));
+    }
+	
+	// this.player.vel.normalize();
+	// this.player.vel.multiplyScalar(this.player.speed);
+	this.player.vel.multiplyScalar(this.player.friction);
+	this.player.pos.add(this.player.vel);
   },
 
 }; // end app.main

@@ -15,8 +15,8 @@ window.onload = function(){
 	console.log("window.onload called");
 
 	// this the sandbox
-	app.sound.init();
-	app.main.sound = app.sound;
+	// app.sound.init();
+	// app.main.sound = app.sound;
 	
 	app.main.init();
 };
