@@ -43,6 +43,8 @@ app.main = {
       END: 5,
     }),
 
+    vec: {},
+
     // methods
 	init : function() {
 		console.log("app.main.init() called");
@@ -60,6 +62,9 @@ app.main = {
 
     // load level
     this.reset();
+
+    this.vec.x = this.canvas.width/2;
+    this.vec.y = this.canvas.height/2;
 
 		// start the game loop
 		this.update();
@@ -90,6 +95,28 @@ app.main = {
 		// iii) draw HUD
     this.ctx.globalAlpha = 1.0;
     this.drawHUD(this.ctx);
+
+    this.drawPlayer(this.ctx);
+
+    // move up using 'w' key
+    if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
+      this.vec.y -= 2;
+    }
+
+    // move down using 's' key
+    if(myKeys.keydown[myKeys.KEYBOARD.KEY_S]){
+      this.vec.y += 2;
+    }
+
+    // move right using 'd' key
+    if(myKeys.keydown[myKeys.KEYBOARD.KEY_D]){
+      this.vec.x += 2;
+    }
+
+    // move left using 'a' key
+    if(myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
+      this.vec.x -= 2;
+    }
 
 		// iv) draw debug info
 		if (this.debug){
@@ -189,6 +216,13 @@ app.main = {
 
   toggleDebug: function(){
     this.debug = !this.debug;
+  },
+
+  drawPlayer: function(ctx){
+    ctx.save();
+    ctx.fillStyle = "red";
+    ctx.fillRect(this.vec.x, this.vec.y, 100, 100);
+    ctx.restore();
   },
 
 }; // end app.main
