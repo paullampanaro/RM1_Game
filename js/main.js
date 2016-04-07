@@ -33,6 +33,7 @@ app.main = {
     debug: true,
     paused: false,
     animationID: 0,
+    jumpHeight: 0,
 
     // game state fake enumeration
     GAME_STATE: Object.freeze({
@@ -93,12 +94,11 @@ app.main = {
 		this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
 
 		// iii) draw HUD
-    this.ctx.globalAlpha = 1.0;
-    this.drawHUD(this.ctx);
+        this.ctx.globalAlpha = 1.0;
+        this.drawHUD(this.ctx);
 
 	this.handlePlayer(this.dt);
 	
-    // this.drawPlayer(this.ctx);
 	this.drawPlayer(this.ctx);
 
 		// iv) draw debug info
@@ -209,7 +209,7 @@ app.main = {
   },
   
   createPlayer: function(){  
-	this.player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.width/2);
+	this.player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - 100);
 	this.player.vel = new Victor(0,0);
 	this.player.acc = new Victor(0,0);
 	this.player.speed = 5;
@@ -221,12 +221,10 @@ app.main = {
 	
 	  // move up using 'w' key
     if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
-      this.player.pos.y -= 2;
-    }
-
-    // move down using 's' key
-    if(myKeys.keydown[myKeys.KEYBOARD.KEY_S]){
-      this.player.pos.y += 2;
+        if (this.jumpHeight < 200){
+            this.player.pos.y -= 15;
+        }
+        this.jumpHeight += 15;
     }
 
     // move right using 'd' key
@@ -243,6 +241,21 @@ app.main = {
 	// this.player.vel.multiplyScalar(this.player.speed);
 	this.player.vel.multiplyScalar(this.player.friction);
 	this.player.pos.add(this.player.vel);
+      
+      if(this.player.pos.y < app.main.canvas.height - 100){
+          this.player.pos.y += 6;
+      }
+      
+      if(this.player.pos.y >= app.main.canvas.height - 100){
+          this.jumpHeight = 0;
+      }
+      
+      if(this.player.pos.x < 0){
+          this.player.pos.x = 0;
+      }
+      else if(this.player.pos.x  >= app.main.canvas.width - 100){
+          this.player.pos.x = app.main.canvas.width - 100;
+      }
   },
 
 }; // end app.main
