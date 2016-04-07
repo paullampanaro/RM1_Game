@@ -63,7 +63,7 @@ app.main = {
 
     // load level
     this.reset();
-	
+
 	this.createPlayer();
 	console.log("Created player");
 
@@ -98,7 +98,7 @@ app.main = {
         this.drawHUD(this.ctx);
 
 	this.handlePlayer(this.dt);
-	
+
 	this.drawPlayer(this.ctx);
 
 		// iv) draw debug info
@@ -127,7 +127,7 @@ app.main = {
 		fps = clamp(fps, 12, 60);
 		this.lastTime = now;
 		return 1/fps;
-	}, 
+	},
 
   drawPauseScreen: function(ctx)
   {
@@ -207,8 +207,8 @@ app.main = {
     ctx.fillRect(this.player.pos.x, this.player.pos.y, 100, 100);
     ctx.restore();
   },
-  
-  createPlayer: function(){  
+
+  createPlayer: function(){
 	this.player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - 100);
 	this.player.vel = new Victor(0,0);
 	this.player.acc = new Victor(0,0);
@@ -216,9 +216,9 @@ app.main = {
 	this.player.friction = 0.95;
 	Object.seal(this.player);
   },
-  
+
   handlePlayer: function(dt){
-	
+
 	  // move up using 'w' key
     if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
         if (this.jumpHeight < 200){
@@ -236,26 +236,52 @@ app.main = {
     if(myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
 		this.player.vel.add(Victor(-1,0));
     }
-	
+
 	// this.player.vel.normalize();
 	// this.player.vel.multiplyScalar(this.player.speed);
 	this.player.vel.multiplyScalar(this.player.friction);
 	this.player.pos.add(this.player.vel);
-      
+
       if(this.player.pos.y < app.main.canvas.height - 100){
           this.player.pos.y += 6;
       }
-      
+
       if(this.player.pos.y >= app.main.canvas.height - 100){
           this.jumpHeight = 0;
       }
-      
+
       if(this.player.pos.x < 0){
           this.player.pos.x = 0;
       }
       else if(this.player.pos.x  >= app.main.canvas.width - 100){
           this.player.pos.x = app.main.canvas.width - 100;
       }
+  },
+
+  sprite: function(options)
+  {
+    this.context = options.context;
+    that.width = options.width;
+    that.height = options.height;
+    that.image = options.image;
+
+    return that;
+
+    that.render = function()
+    {
+      // draw the animation
+      that.context.drawImage(
+        that.image,
+        0,
+        0,
+        that.width,
+        that.height,
+        0,
+        0,
+        that.width,
+        that.height
+      );
+    }
   },
 
 }; // end app.main
