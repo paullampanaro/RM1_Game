@@ -17,6 +17,7 @@ window.onload = function(){
 	// this the sandbox
 	// app.sound.init();
 	// app.main.sound = app.sound;
+	app.main.player = app.player;
 	
 	app.main.init();
 };

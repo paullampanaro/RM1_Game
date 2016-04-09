@@ -15,25 +15,27 @@ var app = app || {};
  This object literal has its own properties and methods (functions)
 
  */
-app.main = {
+ app.main = {
   // game state properties
-    gameState: undefined,
-    roundScore: 0,
-    totalScore: 0,
+  gameState: undefined,
+  roundScore: 0,
+  totalScore: 0,
 
-    // new property for sound module
-    // sound: undefined, // required - loaded by main.js
+  // new property for sound module
+  // sound: undefined, // required - loaded by main.js
+
+  // property for player module
+  player: undefined,
 
 	//  properties
-    WIDTH : 1024,
-    HEIGHT: 768,
-    canvas: undefined,
-    ctx: undefined,
+  WIDTH : 1024,
+  HEIGHT: 768,
+  canvas: undefined,
+  ctx: undefined,
    	lastTime: 0, // used by calculateDeltaTime()
     debug: true,
     paused: false,
     animationID: 0,
-    jumpHeight: 0,
 
     // game state fake enumeration
     GAME_STATE: Object.freeze({
@@ -44,11 +46,9 @@ app.main = {
       END: 5,
     }),
 
-    player: {},
-
     // methods
-	init : function() {
-		console.log("app.main.init() called");
+    init : function() {
+      console.log("app.main.init() called");
 		// initialize properties
 		this.canvas = document.querySelector('canvas');
 		this.canvas.width = this.WIDTH;
@@ -64,8 +64,8 @@ app.main = {
     // load level
     this.reset();
 
-	this.createPlayer();
-	console.log("Created player");
+    this.player.createPlayer();
+    console.log("Created player");
 
 		// start the game loop
 		this.update();
@@ -75,7 +75,7 @@ app.main = {
   reset: function(){
   },
 
-	update: function(){
+  update: function(){
 		// schedule a call to update()
     this.animationID = requestAnimationFrame(this.update.bind(this));
 
@@ -90,19 +90,19 @@ app.main = {
 	 	var dt = this.calculateDeltaTime();
 
 		// i) draw background
-		this.ctx.fillStyle = "black";
-		this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
+this.ctx.fillStyle = "black";
+this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
 
 		// iii) draw HUD
-        this.ctx.globalAlpha = 1.0;
-        this.drawHUD(this.ctx);
+this.ctx.globalAlpha = 1.0;
+this.drawHUD(this.ctx);
 
-	this.handlePlayer(this.dt);
+this.player.handlePlayer(this.dt);
 
-	this.drawPlayer(this.ctx);
+this.player.drawPlayer(this.ctx);
 
 		// iv) draw debug info
-		if (this.debug){
+if (this.debug){
 			// draw dt in bottom right corner
 			this.fillText(this.ctx, "dt: " + dt.toFixed(3), this.WIDTH - 150, this.HEIGHT - 10, "18pt courier", "white");
 		}
@@ -199,89 +199,6 @@ app.main = {
 
   toggleDebug: function(){
     this.debug = !this.debug;
-  },
-
-  drawPlayer: function(ctx){
-    ctx.save();
-    ctx.fillStyle = "red";
-    ctx.fillRect(this.player.pos.x, this.player.pos.y, 100, 100);
-    ctx.restore();
-  },
-
-  createPlayer: function(){
-	this.player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - 100);
-	this.player.vel = new Victor(0,0);
-	this.player.acc = new Victor(0,0);
-	this.player.speed = 5;
-	this.player.friction = 0.95;
-	Object.seal(this.player);
-  },
-
-  handlePlayer: function(dt){
-
-	  // move up using 'w' key
-    if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
-        if (this.jumpHeight < 200){
-            this.player.pos.y -= 15;
-        }
-        this.jumpHeight += 15;
-    }
-
-    // move right using 'd' key
-    if(myKeys.keydown[myKeys.KEYBOARD.KEY_D]){
-		this.player.vel.add(Victor(1,0));
-    }
-
-    // move left using 'a' key
-    if(myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
-		this.player.vel.add(Victor(-1,0));
-    }
-
-	// this.player.vel.normalize();
-	// this.player.vel.multiplyScalar(this.player.speed);
-	this.player.vel.multiplyScalar(this.player.friction);
-	this.player.pos.add(this.player.vel);
-
-      if(this.player.pos.y < app.main.canvas.height - 100){
-          this.player.pos.y += 6;
-      }
-
-      if(this.player.pos.y >= app.main.canvas.height - 100){
-          this.jumpHeight = 0;
-      }
-
-      if(this.player.pos.x < 0){
-          this.player.pos.x = 0;
-      }
-      else if(this.player.pos.x  >= app.main.canvas.width - 100){
-          this.player.pos.x = app.main.canvas.width - 100;
-      }
-  },
-
-  sprite: function(options)
-  {
-    this.context = options.context;
-    that.width = options.width;
-    that.height = options.height;
-    that.image = options.image;
-
-    return that;
-
-    that.render = function()
-    {
-      // draw the animation
-      that.context.drawImage(
-        that.image,
-        0,
-        0,
-        that.width,
-        that.height,
-        0,
-        0,
-        that.width,
-        that.height
-      );
-    }
   },
 
 }; // end app.main
