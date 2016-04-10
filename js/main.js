@@ -90,7 +90,7 @@ var app = app || {};
 	 	var dt = this.calculateDeltaTime();
 
 		// i) draw background
-this.ctx.fillStyle = "black";
+this.ctx.fillStyle = "#6495ed";
 this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
 
 		// iii) draw HUD

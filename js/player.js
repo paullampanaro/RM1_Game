@@ -9,16 +9,35 @@ app.player = (function(){
 	var playerImage = new Image();
 	playerImage.src = "media/batman.png";
 
+	var playerImage2 = new Image();
+	playerImage2 .src = "media/batman2.png";
+
+	// sprite state fake enumeration
+    var SPRITE_STATE = Object.freeze({
+      IDLE: 0,
+      RUNNING: 1,
+      JUMPING: 3,
+      THOWING: 4,
+      CROUCHING: 5,
+      DYING: 6,
+    });
+
+    var spriteState = SPRITE_STATE.IDLE;
+
 	// sprite animation variables
-	var frameWidth = 100;
-	var frameHeight = 120;
-	var frameDelay = 1;
-	var frameIndex = 0;
-	var numCols = 10;
+	var frameWidth = 70;
+	var frameHeight = 70;
+	var tickCount = 0;
+	var ticksPerFrame = 1;
+	var frameStartIndex = 19
+	var frameEndIndex = 25;
+	var frameIndex = frameStartIndex;
+	var numCols = 6;
+	var faceRight = true;
 
 	function createPlayer(){
 
-		player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - 100);
+		player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight);
 		player.vel = new Victor(0,0);
 		player.acc = new Victor(0,0);
 		player.speed = 5;
@@ -30,68 +49,153 @@ app.player = (function(){
 
 	function drawPlayer(ctx){
 
-		var col = frameIndex % (numCols);
+		handleSprite();
+		handleFrameIndex();
+
+		if(faceRight)
+			var col = (frameIndex % numCols);
+		else
+			var col = numCols - (frameIndex % numCols);
+
 		var row = Math.floor(frameIndex / numCols);
 		var frameX = col * frameWidth;
 		var frameY = row * frameHeight;
 
-		ctx.drawImage(playerImage, 
-			frameX, frameY, frameWidth, frameHeight,
-			player.pos.x, player.pos.y, frameWidth, frameHeight);
+		if(faceRight)
+			ctx.drawImage(playerImage, 
+				frameX, frameY, frameWidth, frameHeight,
+				player.pos.x, player.pos.y, frameWidth, frameHeight);
+		else
+			ctx.drawImage(playerImage2, 
+				frameX, frameY, frameWidth, frameHeight,
+				player.pos.x, player.pos.y, frameWidth, frameHeight);
 	}
 
 	function handlePlayer(dt){
-
-	  	// move up using 'w' key
-	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
-	  		if (player.jump < 200){
-	  			player.pos.y -= 15;
-	  		}
-	  		player.jump += 15;
-	  	}
 
     	// move right using 'd' key
     	if(myKeys.keydown[myKeys.KEYBOARD.KEY_D]){
     		player.vel.add(Victor(1,0));
 
-    		handleFrameIndex();
+    		spriteState = SPRITE_STATE.RUNNING;
+    		faceRight = true;
     	}
 
     	// move left using 'a' key
     	if(myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
     		player.vel.add(Victor(-1,0));
     		
-    		handleFrameIndex();
+    		spriteState = SPRITE_STATE.RUNNING;
+    		faceRight = false;
     	}
+
+    	// move up using 'w' key
+	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
+	  		if (player.jump < 200){
+	  			player.pos.y -= 15;
+	  		}
+	  		player.jump += 15;
+
+	  		spriteState = SPRITE_STATE.JUMPING;
+	  	}
+
+	  	// crouching down with 's' key
+	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_S]){
+
+	  		player.speed = 0;
+	  		spriteState = SPRITE_STATE.CROUCHING;
+	  	}
+	  	else
+	  		player.speed = 5;
 
 		// this.player.vel.normalize();
 		// this.player.vel.multiplyScalar(this.player.speed);
 		player.vel.multiplyScalar(player.friction);
 		player.pos.add(player.vel);
 
-		if(player.pos.y < app.main.canvas.height - 100){
+		if(player.pos.y < app.main.canvas.height - frameHeight){
 			player.pos.y += 6;
 		}
 
-		if(player.pos.y >= app.main.canvas.height - 100){
+		if(player.pos.y >= app.main.canvas.height - frameHeight){
 			player.jump = 0;
 		}
 
 		if(player.pos.x < 0){
 			player.pos.x = 0;
 		}
-		else if(player.pos.x  >= app.main.canvas.width - 100){
-			player.pos.x = app.main.canvas.width - 100;
+		else if(player.pos.x  >= app.main.canvas.width - frameHeight){
+			player.pos.x = app.main.canvas.width - frameHeight;
+		}
+
+		if(!myKeys.keydown[myKeys.KEYBOARD.KEY_A] && !myKeys.keydown[myKeys.KEYBOARD.KEY_D] 
+			&& !myKeys.keydown[myKeys.KEYBOARD.KEY_W] && !myKeys.keydown[myKeys.KEYBOARD.KEY_S])
+		{
+			spriteState = SPRITE_STATE.IDLE;
 		}
 	}
 
 	function handleFrameIndex()
 	{
 		// sprite animation
-		frameIndex += 1;
-		if(frameIndex == 10)
+
+		/*
+		tickCount += 1;
+
+		if(tickCount >= ticksPerFrame)
 		{
-			frameIndex = 0;
+			tickCount = 0;
+			frameIndex += 1;
+		}
+		*/
+
+		frameIndex += 1;
+
+		if(frameIndex > frameEndIndex)
+		{
+			frameIndex = frameStartIndex;
+		}
+	}
+
+	function handleSprite()
+	{
+		if(spriteState == SPRITE_STATE.IDLE)
+		{
+			frameStartIndex = 6;
+			frameEndIndex = 11;
+		}
+
+		if(spriteState == SPRITE_STATE.RUNNING)
+		{
+			frameStartIndex = 18;
+			frameEndIndex = 23;
+		}
+
+		if(spriteState == SPRITE_STATE.JUMPING)
+		{
+			frameStartIndex = 26;
+			frameEndIndex = 26;
+
+			if(frameIndex == frameEndIndex)
+			{
+				// spriteState == SPRITE_STATE.IDLE;
+			}
+		}
+
+		if(spriteState == SPRITE_STATE.CROUCHING)
+		{
+			frameStartIndex = 27;
+			frameEndIndex = 27;
+		}
+
+		if(spriteState == SPRITE_STATE.THROWING)
+		{
+			
+		}
+
+		if(spriteState == SPRITE_STATE.DYING)
+		{
+			
 		}
 	}
 
