@@ -34,6 +34,8 @@ app.player = (function(){
 	var frameIndex = frameStartIndex;
 	var numCols = 6;
 	var faceRight = true;
+	var grounded = true;
+	var previous = false;
 
 	function createPlayer(){
 
@@ -97,6 +99,7 @@ app.player = (function(){
 	  		player.jump += 15;
 
 	  		spriteState = SPRITE_STATE.JUMPING;
+	  		grounded = false;
 	  	}
 
 	  	// crouching down with 's' key
@@ -118,6 +121,10 @@ app.player = (function(){
 		}
 
 		if(player.pos.y >= app.main.canvas.height - frameHeight){
+			grounded = true;
+		}
+
+		if(grounded == true){
 			player.jump = 0;
 		}
 
@@ -132,6 +139,7 @@ app.player = (function(){
 			&& !myKeys.keydown[myKeys.KEYBOARD.KEY_W] && !myKeys.keydown[myKeys.KEYBOARD.KEY_S])
 		{
 			spriteState = SPRITE_STATE.IDLE;
+			grounded = false;
 		}
 	}
 
@@ -199,10 +207,37 @@ app.player = (function(){
 		}
 	}
 
+	//Handle collisions - takes the x position, y postion, width and height of the object you are checking collisions with
+	function handleCollisions(xPos, yPos, width, height){
+	var r1Width = xPos + width;
+	var r1Height = yPos + height;
+	var r2Width = player.pos.x + frameWidth;
+	var r2Height = player.pos.y + frameHeight;
+	if(r1Width >= player.pos.x && xPos <= r2Width && r1Height >= player.pos.y && yPos <= r2Height){
+		if(r2Width >= xPos && player.pos.x < xPos && r2Height < yPos){
+			player.pos.x = xPos - frameWidth;
+		}
+		else if(r2Width >= r1Width && player.pos.x < r1Width && r2Height < yPos){
+			player.pos.x = r1Width;
+		}
+		if(player.pos.y < r1Height && r2Height >= r1Height){
+			player.pos.y = r1Height;
+		}
+		else if(player.pos.y <= yPos && r2Height > yPos){
+			player.pos.y = yPos - frameHeight;
+			grounded = true;
+		}
+	}
+	else {
+		return false;
+	}
+}
+
   return{
   	createPlayer: createPlayer,
   	drawPlayer: drawPlayer,
-  	handlePlayer: handlePlayer
+  	handlePlayer: handlePlayer,
+  	handleCollisions: handleCollisions
   };
 
 }());

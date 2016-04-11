@@ -27,6 +27,15 @@ var app = app || {};
   // property for player module
   player: undefined,
 
+  //property for manager module
+  manager: undefined,
+
+  PLATFORMWIDTH: 200,
+  PLATFORMHEIGHT: 20,
+  PLATFORMLEFTX: 100,
+  PLATFORMRIGHTX: 700,
+  PLATFORMMIDX: 400,
+
 	//  properties
   WIDTH : 1024,
   HEIGHT: 768,
@@ -67,6 +76,10 @@ var app = app || {};
     this.player.createPlayer();
     console.log("Created player");
 
+    //Create the world and its respective collision checks
+    //this.manager.createManager();
+    //console.log("Created manager");
+
 		// start the game loop
 		this.update();
 	},
@@ -93,6 +106,17 @@ var app = app || {};
 this.ctx.fillStyle = "#6495ed";
 this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
 
+this.ctx.fillStyle = "red";
+this.ctx.fillRect(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.ctx.fillRect(this.PLATFORMRIGHTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.ctx.fillRect(this.PLATFORMMIDX, 568, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.ctx.fillRect(this.PLATFORMLEFTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.ctx.fillRect(this.PLATFORMRIGHTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.ctx.fillRect(this.PLATFORMMIDX, 368, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.ctx.fillRect(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.ctx.fillRect(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.ctx.fillRect(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+
 		// iii) draw HUD
 this.ctx.globalAlpha = 1.0;
 this.drawHUD(this.ctx);
@@ -101,6 +125,15 @@ this.player.handlePlayer(this.dt);
 
 this.player.drawPlayer(this.ctx);
 
+this.player.handleCollisions(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.player.handleCollisions(this.PLATFORMRIGHTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.player.handleCollisions(this.PLATFORMMIDX, 568, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.player.handleCollisions(this.PLATFORMLEFTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.player.handleCollisions(this.PLATFORMRIGHTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.player.handleCollisions(this.PLATFORMMIDX, 368, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.player.handleCollisions(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.player.handleCollisions(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+this.player.handleCollisions(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
 		// iv) draw debug info
 if (this.debug){
 			// draw dt in bottom right corner
