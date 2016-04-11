@@ -50,6 +50,7 @@ var app = app || {};
     GAME_STATE: Object.freeze({
       BEGIN: 0,
       DEFAULT: 1,
+      INSTRUCTIONS: 2,
       ROUND_OVER: 3,
       REPEAT_LEVEL: 4,
       END: 5,
@@ -99,46 +100,54 @@ var app = app || {};
       return;
     }
 
-	 	// calculate delta time
-	 	var dt = this.calculateDeltaTime();
+    // calculate delta time
+    var dt = this.calculateDeltaTime();
 
-		// i) draw background
-this.ctx.fillStyle = "#6495ed";
-this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
+   
+    // i) draw background
+    this.ctx.fillStyle = "#6495ed";
+    this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
 
-this.ctx.fillStyle = "red";
-this.ctx.fillRect(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.ctx.fillRect(this.PLATFORMRIGHTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.ctx.fillRect(this.PLATFORMMIDX, 568, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.ctx.fillRect(this.PLATFORMLEFTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.ctx.fillRect(this.PLATFORMRIGHTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.ctx.fillRect(this.PLATFORMMIDX, 368, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.ctx.fillRect(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.ctx.fillRect(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.ctx.fillRect(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+    if(this.gameState == this.GAME_STATE.BEGIN || this.gameState == this.GAME_STATE.INSTRUCTIONS){
+      this.drawHUD(this.ctx);
+    } else {
+      //Create Platforms
+      this.ctx.fillStyle = "red";
+      this.ctx.fillRect(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.ctx.fillRect(this.PLATFORMRIGHTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.ctx.fillRect(this.PLATFORMMIDX, 568, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.ctx.fillRect(this.PLATFORMLEFTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.ctx.fillRect(this.PLATFORMRIGHTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.ctx.fillRect(this.PLATFORMMIDX, 368, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.ctx.fillRect(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.ctx.fillRect(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.ctx.fillRect(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
 
-		// iii) draw HUD
-this.ctx.globalAlpha = 1.0;
-this.drawHUD(this.ctx);
+  		// iii) draw HUD
+      this.ctx.globalAlpha = 1.0;
+      this.drawHUD(this.ctx);
 
-this.player.handlePlayer(this.dt);
+      this.player.handlePlayer(this.dt);
 
-this.player.drawPlayer(this.ctx);
+      this.player.drawPlayer(this.ctx);
 
-this.player.handleCollisions(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.player.handleCollisions(this.PLATFORMRIGHTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.player.handleCollisions(this.PLATFORMMIDX, 568, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.player.handleCollisions(this.PLATFORMLEFTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.player.handleCollisions(this.PLATFORMRIGHTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.player.handleCollisions(this.PLATFORMMIDX, 368, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.player.handleCollisions(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.player.handleCollisions(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-this.player.handleCollisions(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-		// iv) draw debug info
-if (this.debug){
-			// draw dt in bottom right corner
-			this.fillText(this.ctx, "dt: " + dt.toFixed(3), this.WIDTH - 150, this.HEIGHT - 10, "18pt courier", "white");
-		}
+      //Check for collisions
+      this.player.handleCollisions(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.player.handleCollisions(this.PLATFORMRIGHTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.player.handleCollisions(this.PLATFORMMIDX, 568, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.player.handleCollisions(this.PLATFORMLEFTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.player.handleCollisions(this.PLATFORMRIGHTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.player.handleCollisions(this.PLATFORMMIDX, 368, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.player.handleCollisions(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.player.handleCollisions(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+      this.player.handleCollisions(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+
+  		// iv) draw debug info
+      if (this.debug){
+      	// draw dt in bottom right corner
+      	this.fillText(this.ctx, "dt: " + dt.toFixed(3), this.WIDTH - 150, this.HEIGHT - 10, "18pt courier", "white");
+      }
+    }
 	},
 
 	fillText: function(ctx, string, x, y, css, color) {
@@ -169,13 +178,13 @@ if (this.debug){
     ctx.fillRect(0,0,this.WIDTH, this.HEIGHT);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    this.fillText(this.ctx, "... PAUSED ...", this.WIDTH/2, this.HEIGHT/2, "40pt courier", "white");
+    this.fillText(this.ctx, "... PAUSED ...", this.WIDTH/2, this.HEIGHT/2, "50pt Bangers", "white");
     ctx.restore();
   },
 
   doMouseDown: function(e){
     // this.sound.playBGAudio();
-
+    var mouse = getMouse(e);
     // unpause on a click
     // just to make sure we never get stuck in a paused state
     if(this.paused){
@@ -184,21 +193,61 @@ if (this.debug){
       return;
     };
 
+    if(this.gameState == this.GAME_STATE.BEGIN && mouse.x > this.WIDTH/2 - 100 && mouse.x < this.WIDTH/2 + 102.5 && mouse.y > this.HEIGHT/2 - 110 && mouse.y < this.HEIGHT/2 - 50){
+      this.gameState = this.GAME_STATE.DEFAULT;
+    }
+
+    if(this.gameState == this.GAME_STATE.BEGIN && mouse.x > this.WIDTH/2 - 130 && mouse.x < this.WIDTH/2 + 135 && mouse.y > this.HEIGHT/2 - 30 && mouse.y < this.HEIGHT/2 + 30){
+      this.gameState = this.GAME_STATE.INSTRUCTIONS;
+    }
+
+    if(this.gameState == this.GAME_STATE.INSTRUCTIONS && mouse.x > 40 && mouse.x < 270 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
+      this.gameState = this.GAME_STATE.BEGIN;
+    }
+
     // have to call through app.main because this = canvas
     // can you come up with a better way?
     var mouse = getMouse(e);
   },
 
-  // STUB: check collisions
-  checkForCollisions: function(){
-  },
-
   drawHUD: function(ctx){
-  	ctx.save(); // NEW
+  	ctx.save();
+    
+    if(this.gameState == this.GAME_STATE.BEGIN){
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(this.WIDTH/2 - 100, this.HEIGHT/2 - 110, 205, 60);
+      ctx.strokeRect(this.WIDTH/2 - 130, this.HEIGHT/2 - 30, 270, 60);
+      this.fillText(ctx, "Batman vs Superman", this.WIDTH/2, this.HEIGHT/2 - 250,"80pt Bangers", "white");
+      this.fillText(ctx, "Play Game", this.WIDTH/2, this.HEIGHT/2 - 80,"40pt Bangers", "white");
+      this.fillText(ctx, "Instructions", this.WIDTH/2, this.HEIGHT/2,"40pt Bangers", "white");
+    }
 
-    // code here
-
-  	ctx.restore(); // NEW
+    if(this.gameState == this.GAME_STATE.INSTRUCTIONS){
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(40, this.HEIGHT - 90, 230, 60);
+      this.fillText(ctx, "Instructions", this.WIDTH/2, this.HEIGHT/2 - 250,"80pt Bangers", "white");
+      this.fillText(ctx, "Use A and D to move left and right", this.WIDTH/2, this.HEIGHT/2 - 80,"40pt Bangers", "white");
+      this.fillText(ctx, "Use W to jump", this.WIDTH/2, this.HEIGHT/2,"40pt Bangers", "white");
+      this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "white");
+    }
+  
+    if(this.gameState == this.GAME_STATE.ROUND_OVER){
+      ctx.save();
+    }
+    
+    // game over screen
+    if(this.gameState == this.GAME_STATE.END){
+      ctx.save();
+    }
+    
+    ctx.restore();
   },
 
   pauseGame: function(){
