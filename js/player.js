@@ -28,7 +28,7 @@ app.player = (function(){
 	var frameWidth = 70;
 	var frameHeight = 70;
 	var tickCount = 0;
-	var ticksPerFrame = 1;
+	var ticksPerFrame = 2;
 	var frameStartIndex = 19
 	var frameEndIndex = 25;
 	var frameIndex = frameStartIndex;
@@ -41,9 +41,8 @@ app.player = (function(){
 
 		player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight);
 		player.vel = new Victor(0,0);
-		player.acc = new Victor(0,0);
-		player.speed = 5;
-		player.friction = 0.95;
+		player.speed = 3;
+		player.friction = 0.90;
 		player.jump = 0;
 
 		Object.seal(player);
@@ -93,10 +92,10 @@ app.player = (function(){
 
     	// move up using 'w' key
 	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
-	  		if (player.jump < 200){
-	  			player.pos.y -= 15;
+	  		if (player.jump < 300){
+	  			player.pos.y -= 10;
 	  		}
-	  		player.jump += 15;
+	  		player.jump += 10;
 
 	  		spriteState = SPRITE_STATE.JUMPING;
 	  		grounded = false;
@@ -147,7 +146,6 @@ app.player = (function(){
 	{
 		// sprite animation
 
-		/*
 		tickCount += 1;
 
 		if(tickCount >= ticksPerFrame)
@@ -155,9 +153,8 @@ app.player = (function(){
 			tickCount = 0;
 			frameIndex += 1;
 		}
-		*/
 
-		frameIndex += 1;
+		// frameIndex += 1;
 
 		if(frameIndex > frameEndIndex)
 		{
@@ -233,11 +230,17 @@ app.player = (function(){
 	}
 }
 
+	function findPlayer()
+	{
+		return player.pos;
+	}
+
   return{
   	createPlayer: createPlayer,
   	drawPlayer: drawPlayer,
   	handlePlayer: handlePlayer,
-  	handleCollisions: handleCollisions
+  	handleCollisions: handleCollisions,
+  	findPlayer: findPlayer,
   };
 
 }());

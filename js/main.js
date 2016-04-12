@@ -26,6 +26,7 @@ var app = app || {};
 
   // property for player module
   player: undefined,
+  enemy: undefined,
 
   //property for manager module
   manager: undefined,
@@ -75,7 +76,7 @@ var app = app || {};
     this.reset();
 
     this.player.createPlayer();
-    console.log("Created player");
+    this.enemy.createEnemy();
 
     //Create the world and its respective collision checks
     //this.manager.createManager();
@@ -128,8 +129,12 @@ var app = app || {};
       this.drawHUD(this.ctx);
 
       this.player.handlePlayer(this.dt);
+      this.enemy.handleEnemy(this.dt);
 
       this.player.drawPlayer(this.ctx);
+      this.enemy.drawEnemy(this.ctx);
+
+      this.enemy.fireProjectile(this.ctx);
 
       //Check for collisions
       this.player.handleCollisions(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);

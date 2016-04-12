@@ -19,6 +19,7 @@ window.onload = function(){
 	// app.main.sound = app.sound;
 	app.main.player = app.player;
 	app.main.manager = app.manager;
+	app.main.enemy = app.enemy;
 	
 	app.main.init();
 };
