@@ -12,6 +12,11 @@ app.player = (function(){
 	var playerImage2 = new Image();
 	playerImage2 .src = "media/batman2.png";
 
+	var projectiles = [];
+	var canFire = true;
+	var fireTimer = 0;
+	var fireCap = 15;
+
 	// sprite state fake enumeration
     var SPRITE_STATE = Object.freeze({
       IDLE: 0,
@@ -63,11 +68,11 @@ app.player = (function(){
 		var frameY = row * frameHeight;
 
 		if(faceRight)
-			ctx.drawImage(playerImage, 
+			ctx.drawImage(playerImage,
 				frameX, frameY, frameWidth, frameHeight,
 				player.pos.x, player.pos.y, frameWidth, frameHeight);
 		else
-			ctx.drawImage(playerImage2, 
+			ctx.drawImage(playerImage2,
 				frameX, frameY, frameWidth, frameHeight,
 				player.pos.x, player.pos.y, frameWidth, frameHeight);
 	}
@@ -85,7 +90,7 @@ app.player = (function(){
     	// move left using 'a' key
     	if(myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
     		player.vel.add(Victor(-1,0));
-    		
+
     		spriteState = SPRITE_STATE.RUNNING;
     		faceRight = false;
     	}
@@ -134,7 +139,7 @@ app.player = (function(){
 			player.pos.x = app.main.canvas.width - frameHeight;
 		}
 
-		if(!myKeys.keydown[myKeys.KEYBOARD.KEY_A] && !myKeys.keydown[myKeys.KEYBOARD.KEY_D] 
+		if(!myKeys.keydown[myKeys.KEYBOARD.KEY_A] && !myKeys.keydown[myKeys.KEYBOARD.KEY_D]
 			&& !myKeys.keydown[myKeys.KEYBOARD.KEY_W] && !myKeys.keydown[myKeys.KEYBOARD.KEY_S])
 		{
 			spriteState = SPRITE_STATE.IDLE;
@@ -166,7 +171,7 @@ app.player = (function(){
 	{
 		if(spriteState == SPRITE_STATE.IDLE)
 		{
-			frameStartIndex = 6;
+			frameStartIndex = 11;
 			frameEndIndex = 11;
 		}
 
@@ -195,12 +200,12 @@ app.player = (function(){
 
 		if(spriteState == SPRITE_STATE.THROWING)
 		{
-			
+
 		}
 
 		if(spriteState == SPRITE_STATE.DYING)
 		{
-			
+
 		}
 	}
 
@@ -211,13 +216,19 @@ app.player = (function(){
 	var r2Width = player.pos.x + frameWidth;
 	var r2Height = player.pos.y + frameHeight;
 	if(r1Width >= player.pos.x && xPos <= r2Width && r1Height >= player.pos.y && yPos <= r2Height){
-		if(r2Width >= xPos && player.pos.x < xPos && r2Height < yPos){
+		if(r2Width >= xPos && player.pos.x < xPos && player.pos.y < r1Height && r2Height >= r1Height){
+			player.pos.x = xPos - frameWidth;
+		}
+		else if(r2Width >= r1Width && player.pos.x < r1Width && player.pos.y <= yPos && r2Height > yPos){
+			player.pos.x = r1Width;
+		}
+		else if(r2Width >= xPos && player.pos.x < xPos && r2Height < yPos){
 			player.pos.x = xPos - frameWidth;
 		}
 		else if(r2Width >= r1Width && player.pos.x < r1Width && r2Height < yPos){
 			player.pos.x = r1Width;
 		}
-		if(player.pos.y < r1Height && r2Height >= r1Height){
+		else if(player.pos.y < r1Height && r2Height >= r1Height){
 			player.pos.y = r1Height;
 		}
 		else if(player.pos.y <= yPos && r2Height > yPos){
@@ -235,12 +246,66 @@ app.player = (function(){
 		return player.pos;
 	}
 
+	function handleProjectiles(ctx)
+	{
+		fireTimer += 1;
+		if(fireTimer >= fireCap)
+		{
+			fireTimer = 0;
+			canFire = true;
+		}
+
+		for(var i = 0; i < projectiles.length; i++)
+		{
+			var c = projectiles[i];
+
+			if(c.pos.x > app.main.canvas.width || c.pos.y > app.main.height || c.pos.x < 0 || c.pos.y < 0)
+			{
+				projectiles.splice(i, 1);
+			}
+
+			c.pos.add(c.vel);
+
+			ctx.save();
+			ctx.strokeStyle = "black";
+			ctx.lineWidth = 3;
+			ctx.lineCap = "rounded";
+			ctx.beginPath();
+			ctx.moveTo(c.pos.x, c.pos.y);
+			ctx.lineTo((c.pos.x + c.vel.x), (c.pos.y + c.vel.y));
+			ctx.closePath();
+			ctx.stroke();
+			ctx.restore();
+		}
+	}
+
+	var fireProjectile = function(x, y)
+	{
+		if(canFire)
+		{
+			var projectile = {};
+			projectile.pos = new Victor(player.pos.x, player.pos.y);
+			projectile.vel = new Victor(x - player.pos.x, y - player.pos.y);
+			projectile.speed = 5;
+
+			// recalculate speed;
+			projectile.vel.normalize();
+			projectile.vel.multiplyScalar(projectile.speed);
+
+			Object.seal(projectile);
+			projectiles.push(projectile);
+			canFire = false;
+		}
+	}
+
   return{
   	createPlayer: createPlayer,
   	drawPlayer: drawPlayer,
   	handlePlayer: handlePlayer,
   	handleCollisions: handleCollisions,
   	findPlayer: findPlayer,
+		handleProjectiles: handleProjectiles,
+		fireProjectile: fireProjectile,
   };
 
 }());

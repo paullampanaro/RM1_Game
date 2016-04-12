@@ -104,7 +104,7 @@ var app = app || {};
     // calculate delta time
     var dt = this.calculateDeltaTime();
 
-   
+
     // i) draw background
     this.ctx.fillStyle = "#6495ed";
     this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
@@ -134,7 +134,8 @@ var app = app || {};
       this.player.drawPlayer(this.ctx);
       this.enemy.drawEnemy(this.ctx);
 
-      this.enemy.fireProjectile(this.ctx);
+      this.player.handleProjectiles(this.ctx);
+      this.enemy.handleProjectiles(this.ctx);
 
       //Check for collisions
       this.player.handleCollisions(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
@@ -210,6 +211,11 @@ var app = app || {};
       this.gameState = this.GAME_STATE.BEGIN;
     }
 
+    if(this.gameState == this.GAME_STATE.DEFAULT)
+    {
+      this.player.fireProjectile(mouse.x, mouse.y);
+    }
+
     // have to call through app.main because this = canvas
     // can you come up with a better way?
     var mouse = getMouse(e);
@@ -217,7 +223,7 @@ var app = app || {};
 
   drawHUD: function(ctx){
   	ctx.save();
-    
+
     if(this.gameState == this.GAME_STATE.BEGIN){
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -240,18 +246,23 @@ var app = app || {};
       this.fillText(ctx, "Instructions", this.WIDTH/2, this.HEIGHT/2 - 250,"80pt Bangers", "white");
       this.fillText(ctx, "Use A and D to move left and right", this.WIDTH/2, this.HEIGHT/2 - 80,"40pt Bangers", "white");
       this.fillText(ctx, "Use W to jump", this.WIDTH/2, this.HEIGHT/2,"40pt Bangers", "white");
+      this.fillText(ctx, "Click to throw Batarang", this.WIDTH/2, this.HEIGHT/2 + 80,"40pt Bangers", "white");
       this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "white");
     }
-  
+
     if(this.gameState == this.GAME_STATE.ROUND_OVER){
       ctx.save();
     }
-    
+
+    if(this.gameState == this.GAME_STATE.DEFAULT){
+      ctx.save();
+    }
+
     // game over screen
     if(this.gameState == this.GAME_STATE.END){
       ctx.save();
     }
-    
+
     ctx.restore();
   },
 
@@ -285,7 +296,7 @@ var app = app || {};
   },
 
   toggleDebug: function(){
-    this.debug = !this.debug;
+    // this.debug = !this.debug;
   },
 
 }; // end app.main
