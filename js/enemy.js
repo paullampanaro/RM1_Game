@@ -45,6 +45,8 @@ app.enemy = (function(){
 		enemy.acc = new Victor(0,0);
 		enemy.speed = 6;
 		enemy.friction = 0.99;
+		enemy.health = 100;
+		projectiles = [];
 
 		Object.seal(enemy);
 	}
@@ -91,6 +93,24 @@ app.enemy = (function(){
 		function handleSprite()
 		{
 
+		}
+
+		//Getter for enemy health
+		function findEnemyHealth()
+		{
+			return enemy.health;
+		}
+
+		//Setter for enemy health
+		function setEnemyHealth(newHealth)
+		{
+			enemy.health -= newHealth;
+		}
+
+		//Getter for eney position
+		function findEnemy()
+		{
+			return enemy.pos;
 		}
 
 		function handleProjectiles(ctx)
@@ -149,6 +169,23 @@ app.enemy = (function(){
 				ctx.stroke();
 				ctx.restore();
 			}
+
+			//Check for collisions with player
+			for(var i = 0; i < projectiles.length; i++)
+			{
+				var playerWidth =  playerPos.x + 70;
+				var playerHeight = playerPos.y + 70;
+				var projWidth = projectiles[i].pos.x;
+				var projHeight = projectiles[i].pos.y;
+				
+				//If they are colliding
+				if(projectiles[i].pos.x >= playerPos.x && projWidth < playerWidth && projectiles[i].pos.y >= playerPos.y && projHeight < playerHeight)
+				{
+					//Lower the player's health and remove the projectile
+					app.main.player.setPlayerHealth(5);
+					projectiles.splice(i, 1);
+				}
+			}
 		}
 
 		return{
@@ -156,6 +193,9 @@ app.enemy = (function(){
 			drawEnemy: drawEnemy,
 			handleEnemy: handleEnemy,
 			handleProjectiles: handleProjectiles, // temporary, move this
+			findEnemyHealth: findEnemyHealth,
+			setEnemyHealth: setEnemyHealth,
+			findEnemy: findEnemy,
 		};
 
 	}());

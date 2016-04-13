@@ -52,8 +52,8 @@ var app = app || {};
       BEGIN: 0,
       DEFAULT: 1,
       INSTRUCTIONS: 2,
-      ROUND_OVER: 3,
-      REPEAT_LEVEL: 4,
+      VICTORY: 3,
+      LOST: 4,
       END: 5,
     }),
 
@@ -73,14 +73,10 @@ var app = app || {};
     this.canvas.onmousedown = this.doMouseDown.bind(this);
 
     // load level
-    this.reset();
+    //this.reset();
 
     this.player.createPlayer();
     this.enemy.createEnemy();
-
-    //Create the world and its respective collision checks
-    //this.manager.createManager();
-    //console.log("Created manager");
 
 		// start the game loop
 		this.update();
@@ -88,6 +84,13 @@ var app = app || {};
 
   // STUB: resets level
   reset: function(){
+    this.gameState = this.GAME_STATE.BEGIN;
+
+    this.player.createPlayer();
+    this.enemy.createEnemy();
+
+    // start the game loop
+    this.update();
   },
 
   update: function(){
@@ -109,9 +112,17 @@ var app = app || {};
     this.ctx.fillStyle = "#6495ed";
     this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
 
-    if(this.gameState == this.GAME_STATE.BEGIN || this.gameState == this.GAME_STATE.INSTRUCTIONS){
+    if(this.gameState == this.GAME_STATE.BEGIN || this.gameState == this.GAME_STATE.INSTRUCTIONS || this.gameState == this.GAME_STATE.VICTORY || this.gameState == this.GAME_STATE.LOST){
       this.drawHUD(this.ctx);
-    } else {
+    } 
+
+    if(this.gameState == this.GAME_STATE.VICTORY || this.gameState == this.GAME_STATE.LOST)
+    {
+      cancelAnimationFrame(this.animationID);
+    }
+
+    if (this.gameState == this.GAME_STATE.DEFAULT)
+    {
       //Create Platforms
       this.ctx.fillStyle = "red";
       this.ctx.fillRect(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
@@ -128,12 +139,15 @@ var app = app || {};
       this.ctx.globalAlpha = 1.0;
       this.drawHUD(this.ctx);
 
+      //Handle player and enemy
       this.player.handlePlayer(this.dt);
       this.enemy.handleEnemy(this.dt);
 
+      //Draw
       this.player.drawPlayer(this.ctx);
       this.enemy.drawEnemy(this.ctx);
 
+      //Handle projectiles
       this.player.handleProjectiles(this.ctx);
       this.enemy.handleProjectiles(this.ctx);
 
@@ -147,6 +161,19 @@ var app = app || {};
       this.player.handleCollisions(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
       this.player.handleCollisions(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
       this.player.handleCollisions(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
+
+
+      //If the enemy is killed you wim
+      if(this.enemy.findEnemyHealth() == 0)
+      {
+        this.gameState = this.GAME_STATE.VICTORY;
+      }
+
+      //If you die you lose
+      if(this.player.findPlayerHealth() == 0)
+      {
+        this.gameState = this.GAME_STATE.LOST;
+      }
 
   		// iv) draw debug info
       if (this.debug){
@@ -185,6 +212,7 @@ var app = app || {};
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     this.fillText(this.ctx, "... PAUSED ...", this.WIDTH/2, this.HEIGHT/2, "50pt Bangers", "white");
+    this.fillText(this.ctx, "Click to resume", this.WIDTH/2, this.HEIGHT/2 + 100, "50pt Bangers", "white");
     ctx.restore();
   },
 
@@ -199,6 +227,7 @@ var app = app || {};
       return;
     };
 
+    //Change the gmae state depending on the button you click 
     if(this.gameState == this.GAME_STATE.BEGIN && mouse.x > this.WIDTH/2 - 100 && mouse.x < this.WIDTH/2 + 102.5 && mouse.y > this.HEIGHT/2 - 110 && mouse.y < this.HEIGHT/2 - 50){
       this.gameState = this.GAME_STATE.DEFAULT;
     }
@@ -211,6 +240,15 @@ var app = app || {};
       this.gameState = this.GAME_STATE.BEGIN;
     }
 
+    if(this.gameState == this.GAME_STATE.VICTORY && mouse.x > 40 && mouse.x < 270 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
+      this.reset();
+    }
+
+    if(this.gameState == this.GAME_STATE.LOST && mouse.x > 40 && mouse.x < 270 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
+      this.reset();
+    }
+
+    //Fire batarangs when you click in game
     if(this.gameState == this.GAME_STATE.DEFAULT)
     {
       this.player.fireProjectile(mouse.x, mouse.y);
@@ -221,46 +259,85 @@ var app = app || {};
     var mouse = getMouse(e);
   },
 
+  //Draw the hud depending on the game state
   drawHUD: function(ctx){
   	ctx.save();
 
+    //Main Menu
     if(this.gameState == this.GAME_STATE.BEGIN){
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, this.WIDTH/2, this.HEIGHT);
+      ctx.fillStyle = "blue";
+      ctx.fillRect(this.WIDTH/2, 0, this.WIDTH/2, this.HEIGHT);
+      this.fillText(ctx, "Batman v", 150, 100,"80pt Bangers", "yellow");
+      this.fillText(ctx, "s Superman", this.WIDTH/2, 100,"80pt Bangers", "red");
+      this.fillText(ctx, "Play", this.WIDTH/2 - 95, this.HEIGHT/2 - 105,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Game", this.WIDTH/2, this.HEIGHT/2 - 105,"40pt Bangers", "red");
+      this.fillText(ctx, "Instru", this.WIDTH/2 - 125, this.HEIGHT/2 - 30,"40pt Bangers", "yellow");
+      this.fillText(ctx, "ctions", this.WIDTH/2, this.HEIGHT/2 - 30,"40pt Bangers", "red");
       ctx.strokeStyle = "white";
       ctx.lineWidth = 3;
       ctx.strokeRect(this.WIDTH/2 - 100, this.HEIGHT/2 - 110, 205, 60);
       ctx.strokeRect(this.WIDTH/2 - 130, this.HEIGHT/2 - 30, 270, 60);
-      this.fillText(ctx, "Batman vs Superman", this.WIDTH/2, this.HEIGHT/2 - 250,"80pt Bangers", "white");
-      this.fillText(ctx, "Play Game", this.WIDTH/2, this.HEIGHT/2 - 80,"40pt Bangers", "white");
-      this.fillText(ctx, "Instructions", this.WIDTH/2, this.HEIGHT/2,"40pt Bangers", "white");
-    }
-
-    if(this.gameState == this.GAME_STATE.INSTRUCTIONS){
-      ctx.save();
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.strokeStyle = "white";
+      this.fillText(ctx, "By: Paul Lampanaro and Gregory McClellan", 225, this.HEIGHT - 50,"20pt Bangers", "yellow");
+      this.fillText(ctx, "Batman and Superman are trademarked by DC, we do not own the characters", 300, this.HEIGHT - 20,"15pt Bangers", "white");
+    }
+
+    //Instructions Screen
+    if(this.gameState == this.GAME_STATE.INSTRUCTIONS){
+      ctx.save();
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT)
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeStyle = "yellow";
       ctx.lineWidth = 3;
       ctx.strokeRect(40, this.HEIGHT - 90, 230, 60);
-      this.fillText(ctx, "Instructions", this.WIDTH/2, this.HEIGHT/2 - 250,"80pt Bangers", "white");
-      this.fillText(ctx, "Use A and D to move left and right", this.WIDTH/2, this.HEIGHT/2 - 80,"40pt Bangers", "white");
-      this.fillText(ctx, "Use W to jump", this.WIDTH/2, this.HEIGHT/2,"40pt Bangers", "white");
-      this.fillText(ctx, "Click to throw Batarang", this.WIDTH/2, this.HEIGHT/2 + 80,"40pt Bangers", "white");
-      this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "white");
+      this.fillText(ctx, "Instructions", this.WIDTH/2, this.HEIGHT/2 - 250,"80pt Bangers", "yellow");
+      this.fillText(ctx, "Use A and D to move left and right", this.WIDTH/2, this.HEIGHT/2 - 80,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Use W to jump", this.WIDTH/2, this.HEIGHT/2,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Click to throw Batarang", this.WIDTH/2, this.HEIGHT/2 + 80,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Click off screen to pause", this.WIDTH/2, this.HEIGHT/2 + 160,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "yellow");
     }
 
-    if(this.gameState == this.GAME_STATE.ROUND_OVER){
-      ctx.save();
-    }
-
+    //In game hud
     if(this.gameState == this.GAME_STATE.DEFAULT){
       ctx.save();
+      this.fillText(ctx, "Batman Health: " + this.player.findPlayerHealth(), 20, 60,"30pt Bangers", "white");
+      this.fillText(ctx, "Superman Health: " + this.enemy.findEnemyHealth(), this.WIDTH - 375, 60,"30pt Bangers", "white");
+    }
+
+    //Win Screen
+    if(this.gameState == this.GAME_STATE.VICTORY){
+      ctx.save();
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT)
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeStyle = "yellow";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(40, this.HEIGHT - 90, 230, 60);
+      this.fillText(ctx, "You Won!", this.WIDTH/2, this.HEIGHT/2,"80pt Bangers", "yellow");
+      this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "yellow");
     }
 
     // game over screen
-    if(this.gameState == this.GAME_STATE.END){
+    if(this.gameState == this.GAME_STATE.LOST){
       ctx.save();
+      ctx.fillStyle = "blue";
+      ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT)
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(40, this.HEIGHT - 90, 230, 60);
+      this.fillText(ctx, "You Lost!", this.WIDTH/2, this.HEIGHT/2,"80pt Bangers", "red");
+      this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "red");
     }
 
     ctx.restore();

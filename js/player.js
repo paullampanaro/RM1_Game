@@ -49,6 +49,8 @@ app.player = (function(){
 		player.speed = 3;
 		player.friction = 0.90;
 		player.jump = 0;
+		projectiles= [];
+		player.health = 100;
 
 		Object.seal(player);
 	}
@@ -95,7 +97,7 @@ app.player = (function(){
     		faceRight = false;
     	}
 
-    	// move up using 'w' key
+    	// jump using 'w' key
 	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
 	  		if (player.jump < 300){
 	  			player.pos.y -= 10;
@@ -145,6 +147,34 @@ app.player = (function(){
 			spriteState = SPRITE_STATE.IDLE;
 			grounded = false;
 		}
+
+		/*var enemyPos = app.main.enemy.findEnemy();
+		var enemyWidth =  enemyPos.x + 110;
+		var enemyHeight = enemyPos.y + 110;
+		var playerWidth = player.pos.x + frameWidth;
+		var playerHeight = player.pos.y + frameHeight;
+		if(enemyWidth >= player.pos.x && enemyPos.x <= playerWidth && enemyHeight >= player.pos.y && enemyPos.y <= playerHeight){
+			if(playerWidth >= enemyPos.x && player.pos.x < enemyPos.x && player.pos.y < enemyHeight && playerHeight >= enemyHeight){
+				player.pos.x = enemyPos.x - frameWidth;
+			}
+			else if(playerWidth >= enemyWidth && player.pos.x < enemyWidth && player.pos.y <= enemyPos.y && playerHeight > enemyPos.y){
+				player.pos.x = enemyWidth;
+			}
+			else if(playerWidth >= enemyPos.x && player.pos.x < enemyPos.x && playerHeight < enemyPos.y){
+				player.pos.x = enemyPos.x - frameWidth;
+			}
+			else if(playerWidth >= enemyWidth && player.pos.x < enemyWidth && playerHeight < enemyPos.y){
+				player.pos.x = enemyWidth;
+			}
+			else if(player.pos.y < enemyHeight && playerHeight >= enemyHeight){
+				player.pos.y = enemyHeight;
+			}
+			else if(player.pos.y <= enemyPos.y && playerHeight > enemyPos.y){
+				player.pos.y = enemyPos.y - frameHeight;
+				grounded = true;
+			}
+		}*/
+
 	}
 
 	function handleFrameIndex()
@@ -215,6 +245,7 @@ app.player = (function(){
 	var r1Height = yPos + height;
 	var r2Width = player.pos.x + frameWidth;
 	var r2Height = player.pos.y + frameHeight;
+	//Some crazy math, depending on where the player is colliding, move them accordingly
 	if(r1Width >= player.pos.x && xPos <= r2Width && r1Height >= player.pos.y && yPos <= r2Height){
 		if(r2Width >= xPos && player.pos.x < xPos && player.pos.y < r1Height && r2Height >= r1Height){
 			player.pos.x = xPos - frameWidth;
@@ -240,10 +271,23 @@ app.player = (function(){
 		return false;
 	}
 }
-
+	
+	//Getter for player position
 	function findPlayer()
 	{
 		return player.pos;
+	}
+
+	//Getter for player health
+	function findPlayerHealth()
+	{
+		return player.health;
+	}
+
+	//Setter for player health
+	function setPlayerHealth(newHealth)
+	{
+		player.health -= newHealth;
 	}
 
 	function handleProjectiles(ctx)
@@ -277,6 +321,25 @@ app.player = (function(){
 			ctx.stroke();
 			ctx.restore();
 		}
+
+		//Detect collsions between projectile and enemy
+		//Get the enemies position
+		var enemyPos = app.main.enemy.findEnemy();
+		//For each projectile
+		for(var i = 0; i < projectiles.length; i++)
+		{
+			var enemyWidth =  enemyPos.x + 110;
+			var enemyHeight = enemyPos.y + 110;
+			var projWidth = projectiles[i].pos.x;
+			var projHeight = projectiles[i].pos.y;
+			//Check for collision
+			if(projectiles[i].pos.x >= enemyPos.x && projWidth < enemyWidth && projectiles[i].pos.y >= enemyPos.y && projHeight < enemyHeight)
+			{
+				//Decrease enemy health and remove projectile
+				app.main.enemy.setEnemyHealth(10);
+				projectiles.splice(i, 1);
+			}
+		}
 	}
 
 	var fireProjectile = function(x, y)
@@ -298,14 +361,16 @@ app.player = (function(){
 		}
 	}
 
-  return{
-  	createPlayer: createPlayer,
-  	drawPlayer: drawPlayer,
-  	handlePlayer: handlePlayer,
-  	handleCollisions: handleCollisions,
-  	findPlayer: findPlayer,
-		handleProjectiles: handleProjectiles,
-		fireProjectile: fireProjectile,
-  };
+	  return{
+		  	createPlayer: createPlayer,
+		  	drawPlayer: drawPlayer,
+		  	handlePlayer: handlePlayer,
+		  	handleCollisions: handleCollisions,
+		  	findPlayer: findPlayer,
+			handleProjectiles: handleProjectiles,
+			findPlayerHealth: findPlayerHealth,
+			setPlayerHealth: setPlayerHealth,
+			fireProjectile: fireProjectile,
+	  };
 
 }());
