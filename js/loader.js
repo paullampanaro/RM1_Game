@@ -26,7 +26,7 @@ window.onload = function(){
 		console.log("images loaded called");
 		app.main.init();
 	});
-
+	
 	app.queue.loadManifest([
      {id:"batmanImage", src:"media/batmanAlt.png"},
      {id:"supermanImage", src:"media/superman.png"},
@@ -40,7 +40,7 @@ window.onload = function(){
 	 {id:"laserSpecial", src:"media/laserSpecial.mp3"},
 	 {id:"background", src:"media/fightnight.mp3"},
 	]);
-
+	
 	window.onblur = function()
 	{
 		console.log("blur at " + Date());

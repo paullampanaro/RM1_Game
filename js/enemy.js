@@ -60,6 +60,8 @@ app.enemy = (function(){
 		projectiles = [];
 		spriteState = SPRITE_STATE.IDLE;
 		randomTarget = new Victor(Math.random() * app.main.canvas.width, Math.random() * app.main.canvas.height);
+		fireTimer = 0;
+		canFire = false;
 
 		enemy.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight - 600 );
 		enemy.vel = new Victor(0,0);
@@ -120,9 +122,9 @@ app.enemy = (function(){
 
 		function handleEnemy()
 		{
-			if(myKeys.keydown[myKeys.KEYBOARD.KEY_I])
+			if(false)
 			{
-				console.log("cheese");
+				// console.log("cheese");
 				useSpecial = !useSpecial;
 			}
 

@@ -53,6 +53,8 @@ app.player = (function(){
 		dead = false;
 		deadTimer = 0;
 		projectiles = [];
+		fireTimer = 0;
+		canFire = false;
 		
 		player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight - 240);
 		player.vel = new Victor(0,0);

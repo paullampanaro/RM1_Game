@@ -210,7 +210,7 @@ var app = app || {};
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     this.fillText(this.ctx, "... PAUSED ...", this.WIDTH/2, this.HEIGHT/2, "50pt Bangers", "white");
-    this.fillText(this.ctx, "Click to resume", this.WIDTH/2, this.HEIGHT/2 + 100, "50pt Bangers", "white");
+    this.fillText(this.ctx, "Press P to resume", this.WIDTH/2, this.HEIGHT/2 + 100, "50pt Bangers", "white");
     ctx.restore();
   },
 
@@ -220,7 +220,6 @@ var app = app || {};
     // just to make sure we never get stuck in a paused state
     if(this.paused){
       this.paused = false;
-      this.update();
       return;
     };
 
@@ -230,11 +229,11 @@ var app = app || {};
     }
 
     if(this.gameState == this.GAME_STATE.BEGIN && mouse.x > this.WIDTH/2 - 130 && mouse.x < this.WIDTH/2 + 135 && mouse.y > this.HEIGHT/2 - 30 && mouse.y < this.HEIGHT/2 + 30){
-      this.gameState = this.GAME_STATE.INSTRUCTIONS;
+      this.gameState = this.GAME_STATE.CONTROLS;
     }
 
     if(this.gameState == this.GAME_STATE.BEGIN && mouse.x > this.WIDTH/2 - 110 && mouse.x < this.WIDTH/2 + 95 && mouse.y > this.HEIGHT/2 + 45 && mouse.y < this.HEIGHT/2 + 105){
-      this.gameState = this.GAME_STATE.CONTROLS;
+      this.gameState = this.GAME_STATE.INSTRUCTIONS;
     }
 
     if(this.gameState == this.GAME_STATE.INSTRUCTIONS && mouse.x > 40 && mouse.x < 270 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
@@ -409,11 +408,11 @@ var app = app || {};
     this.update();
 
     // restart audio
-    this.backgroundMusic.resume();
+    createjs.Sound.muted = false;
   },
 
   stopBGAudio: function(){
-    this.backgroundMusic.pause();
+    createjs.Sound.muted = true;
   },
 
   toggleDebug: function(){
