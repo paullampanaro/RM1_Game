@@ -7,24 +7,41 @@ app.enemy = (function(){
 	var enemy = {};
 	var enemyImage = new Image();
 	enemyImage.src = "media/superman.png";
-	var enemyImage2 = new Image();
-	enemyImage2.src = "media/superman2.png";
 
 	var projectiles = [];
-	var fireCap = 10;
 	var fireTimer = 0;
 	var canFire = true;
+	var fireAlt = false;
 
 	// enemy sprite variables
 	var frameWidth = 110;
 	var frameHeight = 110;
-	var tickCount = 0;
-	var ticksPerFrame = 1;
-	var frameStartIndex = 19
-	var frameEndIndex = 25;
-	var frameIndex = frameStartIndex;
-	var numCols = 6;
+	
+	// sprite animation variables
+	var frameX = 570;
+	var frameY = 420;
+	var spriteWidth = 110;
+	var spriteHeight = 110;
+	var frameIndex = 0;
+	var frameCap = 1;
+
 	var randomTarget = undefined;
+	var faceRight = true;
+
+	// alternate attack variables
+	var altWeapon = undefined;
+
+	// game level variables
+	var laserSpeed = 5;
+	var fireCap = 60; //
+	var enemyHealth = 10; //
+	var laserDamage = 1; //
+	var enemySpeed = 0.2; // 
+	var enemyMaxSpeed = 5; //
+	var bloodlust = 0.5; 
+
+	var dead = false;
+	var useSpecial = false;
 
 	// sprite state fake enumeration
 	var SPRITE_STATE = Object.freeze({
@@ -40,15 +57,28 @@ app.enemy = (function(){
 
 	function createEnemy()
 	{
-		enemy.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight - 500);
+		projectiles = [];
+		spriteState = SPRITE_STATE.IDLE;
+		randomTarget = new Victor(Math.random() * app.main.canvas.width, Math.random() * app.main.canvas.height);
+
+		enemy.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight - 600 );
 		enemy.vel = new Victor(0,0);
 		enemy.acc = new Victor(0,0);
-		enemy.speed = 6;
-		enemy.friction = 0.99;
-		enemy.health = 100;
-		projectiles = [];
+		enemy.speed = enemySpeed;
+		enemy.maxSpeed = enemyMaxSpeed;
+		enemy.health = enemyHealth;
 
 		Object.seal(enemy);
+
+		altWeapon = new app.Emitter(); 
+		console.log("Emitter created");
+		altWeapon.numParticles = 100;
+		altWeapon.red = 30;
+		altWeapon.green = 144;
+		altWeapon.blue = 255;
+		altWeapon.createParticles({x: app.main.canvas.width/2  + (frameWidth/2), y: app.main.canvas.height - frameHeight - 500 + (frameHeight/2)});
+
+		Object.seal(altWeapon);
 	}
 
 	function drawEnemy(ctx)
@@ -63,36 +93,114 @@ app.enemy = (function(){
 		var frameY = row * frameHeight;
 		*/
 
-		var frameX = 570; //680
-		var frameY = 420; //530
+		var col = frameX + (spriteWidth * frameIndex); //680
+		var row = frameY; //530
 
-		ctx.drawImage(enemyImage,
-			frameX, frameY, frameWidth, frameHeight,
-			enemy.pos.x, enemy.pos.y, frameWidth, frameHeight);
+		if(faceRight)
+			ctx.drawImage(enemyImage,
+				col, row, frameWidth, frameHeight,
+				enemy.pos.x, enemy.pos.y, 80, 80);
+		else
+		{
+			ctx.save();
+			ctx.translate(enemy.pos.x + frameWidth, enemy.pos.y);
+			ctx.scale(-1, 1);
+			ctx.drawImage(enemyImage,
+				frameX, frameY, frameWidth, frameHeight,
+				0, 0, 80, 80);
+			ctx.restore();
+		}
+
+		// always update breath, don't always draw
+		altWeapon.update({x: enemy.pos.x  + (frameWidth - 15), y: enemy.pos.y + (30)});
+
+		if(fireAlt)
+			altWeapon.draw(ctx);
 		}
 
 		function handleEnemy()
 		{
-			if(randomTarget == undefined)
+			if(myKeys.keydown[myKeys.KEYBOARD.KEY_I])
 			{
-				randomTarget = new Victor(Math.random() * app.main.canvas.width, Math.random() * app.main.canvas.height);
+				console.log("cheese");
+				useSpecial = !useSpecial;
 			}
 
+			var rando = Math.random();
+
 			enemy.acc = new Victor(randomTarget.x - enemy.pos.x, randomTarget.y - enemy.pos.y);
+			enemy.acc.normalize();
+			enemy.acc.multiplyScalar(enemy.speed);
 			enemy.vel.add(enemy.acc);
-			enemy.vel.normalize();
-			enemy.vel.multiplyScalar(enemy.speed);
+
+			if(enemy.vel.magnitude() > enemy.maxSpeed)
+			{
+				enemy.vel.normalize();
+				enemy.vel.multiplyScalar(enemy.maxSpeed);
+			}
+
 			enemy.pos.add(enemy.vel);
 
-			if(enemy.pos.distance(randomTarget) < 5)
+			if(!dead)
 			{
-				randomTarget = new Victor(Math.random() * app.main.canvas.width, Math.random() * app.main.canvas.height);
+				if(enemy.vel.x < 0)
+					faceRight = false;
+				else
+					faceRight = true;
+			}
+
+			if(enemy.pos.distance(randomTarget) < 100)
+			{
+				if(rando > bloodlust)
+					randomTarget = new Victor(Math.random() * app.main.canvas.width, Math.random() * app.main.canvas.height);
+				else
+					randomTarget = app.main.player.findPlayer();
+			}
+
+			if(enemy.health <= 0)
+			{
+				dead = true;
+				spriteState = SPRITE_STATE.DYING;
+			}
+
+			if(dead)
+			{
+				randomTarget = new Victor(Math.random() * app.main.canvas.width, app.main.canvas.height * 2);
+			}
+		}
+
+		function handleFrameIndex()
+		{
+			// sprite animation
+			frameIndex += 1;
+
+			// frameIndex += 1;
+
+			if(frameIndex >= frameCap)
+			{
+				frameIndex = 0;
 			}
 		}
 
 		function handleSprite()
 		{
+			if(spriteState == SPRITE_STATE.IDLE)
+			{
+				frameX = 570;
+				frameY = 420;
+				frameCap = 1;
+				spriteWidth = 110;
+				spriteHeight = 110;
+			}
 
+			if(spriteState == SPRITE_STATE.DYING)
+			{
+				frameX = 100;
+				frameY = 780;
+				frameCap = 1;
+				spriteWidth = 120;
+				spriteHeight = 125;
+			}
 		}
 
 		//Getter for enemy health
@@ -116,6 +224,7 @@ app.enemy = (function(){
 		function handleProjectiles(ctx)
 		{
 			var playerPos = app.main.player.findPlayer();
+			var enemyPos = new Victor(enemy.pos.x + (frameWidth - 15), enemy.pos.y + 30);
 			fireTimer += 1;
 			if(fireTimer >= fireCap)
 			{
@@ -125,25 +234,55 @@ app.enemy = (function(){
 
 			var fireProjectile = function()
 			{
+				var length;
+
+				if(useSpecial)
+				{
+					createjs.Sound.play("laserSpecial");
+					length = 100;
+				}
+				else
+				{
+					createjs.Sound.play("laser");
+					length = 20;
+				}
+
 				var projectile = {};
-				projectile.pos = new Victor(enemy.pos.x, enemy.pos.y);
-				projectile.vel = new Victor(playerPos.x - enemy.pos.x, playerPos.y - enemy.pos.y);
-				projectile.speed = 5;
+				projectile.pos = enemyPos;
+				projectile.vel = new Victor(playerPos.x - enemyPos.x, playerPos.y - enemyPos.y);
+				projectile.speed = laserSpeed;
 
 				// recalculate speed;
 				projectile.vel.normalize();
 				projectile.vel.multiplyScalar(projectile.speed);
+
+				// add tracer victor to draw
+				projectile.tracer = new Victor(projectile.vel.x, projectile.vel.y);
+				projectile.tracer.multiplyScalar(length);
 
 				Object.seal(projectile);
 				projectiles.push(projectile);
 				canFire = false;
 			}
 
-			if(enemy.pos.distance(playerPos) < 300)
+			if(enemyPos.distance(playerPos) < 500 && !dead)
 			{
-				if(canFire)
+				if(enemyPos.distance(playerPos) < 200)
 				{
-					fireProjectile();
+					if(!fireAlt)
+					{
+						createjs.Sound.play("breath");
+					}
+					fireAlt = true;
+					app.main.player.setPlayerHealth(1);
+				}
+				else
+				{
+					fireAlt = false;
+					if(canFire)
+					{
+						fireProjectile();
+					}
 				}
 			}
 
@@ -158,14 +297,21 @@ app.enemy = (function(){
 
 				c.pos.add(c.vel);
 
+				var width;
+
+				if(useSpecial)
+					width = 40;
+				else
+					width = 5;
+
 				ctx.save();
 				ctx.strokeStyle = "red";
-				ctx.lineWidth = 3;
-				ctx.lineCap = "rounded";
+				ctx.lineWidth = width;
+				ctx.lineCap = "round";
 				ctx.beginPath();
-				ctx.moveTo(c.pos.x, c.pos.y);
-				ctx.lineTo((c.pos.x + c.vel.x), (c.pos.y + c.vel.y));
-				ctx.closePath();
+				ctx.moveTo(c.pos.x - (c.tracer.x/2), c.pos.y - (c.tracer.y/2));
+				ctx.lineTo(c.pos.x + (c.tracer.x/2), c.pos.y + (c.tracer.y/2));
+				// ctx.closePath();
 				ctx.stroke();
 				ctx.restore();
 			}
@@ -182,9 +328,28 @@ app.enemy = (function(){
 				if(projectiles[i].pos.x >= playerPos.x && projWidth < playerWidth && projectiles[i].pos.y >= playerPos.y && projHeight < playerHeight)
 				{
 					//Lower the player's health and remove the projectile
-					app.main.player.setPlayerHealth(5);
+					app.main.player.setPlayerHealth(laserDamage);
+					createjs.Sound.play("hit");
 					projectiles.splice(i, 1);
 				}
+			}
+		}
+
+		function setLevel(level)
+		{
+			dead = false;
+			// game level variables
+			// laserSpeed = 1 + level;
+			fireCap = 60 - (level * 5); //
+			enemyHealth = 50 + (level * 10); //
+			laserDamage = 1 + level; //
+			// enemySpeed = 0.1 + (level * 0.1); // 
+			// enemyMaxSpeed = 1 + level; // 
+			bloodlust = level * 0.1;
+
+			if(fireCap <= 0)
+			{
+				fireCap = 1;
 			}
 		}
 
@@ -196,6 +361,7 @@ app.enemy = (function(){
 			findEnemyHealth: findEnemyHealth,
 			setEnemyHealth: setEnemyHealth,
 			findEnemy: findEnemy,
+			setLevel: setLevel,
 		};
 
 	}());

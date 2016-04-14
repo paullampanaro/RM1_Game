@@ -7,15 +7,17 @@ app.player = (function(){
 
 	var player = {};
 	var playerImage = new Image();
-	playerImage.src = "media/batman.png";
-
-	var playerImage2 = new Image();
-	playerImage2 .src = "media/batman2.png";
+	playerImage.src = "media/batmanAlt.png";
 
 	var projectiles = [];
-	var canFire = true;
+	var canFire = false;
 	var fireTimer = 0;
-	var fireCap = 15;
+	var fireCap = 1;
+	var fireSpeed = 5;
+
+	// frame height for collisions
+	var frameWidth = 80;
+	var frameHeight = 80;
 
 	// sprite state fake enumeration
     var SPRITE_STATE = Object.freeze({
@@ -27,26 +29,35 @@ app.player = (function(){
       DYING: 6,
     });
 
-    var spriteState = SPRITE_STATE.IDLE;
-
 	// sprite animation variables
-	var frameWidth = 70;
-	var frameHeight = 70;
-	var tickCount = 0;
-	var ticksPerFrame = 2;
-	var frameStartIndex = 19
-	var frameEndIndex = 25;
-	var frameIndex = frameStartIndex;
-	var numCols = 6;
+	var frameX = 0;
+	var frameY = 0;
+	var spriteWidth = 110;
+	var spriteHeight = 110;
+	var frameIndex = 0;
+	var frameCap = 1;
+
+	var over = false;
+	var dead = false;
+	var deadTimer = 0;
+	var deadCap = 60 * 5;
+	var spriteState = SPRITE_STATE.IDLE;
+
 	var faceRight = true;
 	var grounded = true;
 	var previous = false;
 
 	function createPlayer(){
 
-		player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight);
+		over = false;
+		dead = false;
+		deadTimer = 0;
+		projectiles = [];
+		player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight - 240);
 		player.vel = new Victor(0,0);
 		player.speed = 3;
+		player.maxSpeed = 6;
+		player.acc = new Victor(0,0);
 		player.friction = 0.90;
 		player.jump = 0;
 		projectiles= [];
@@ -60,78 +71,91 @@ app.player = (function(){
 		handleSprite();
 		handleFrameIndex();
 
-		if(faceRight)
-			var col = (frameIndex % numCols);
-		else
-			var col = numCols - (frameIndex % numCols);
-
-		var row = Math.floor(frameIndex / numCols);
-		var frameX = col * frameWidth;
-		var frameY = row * frameHeight;
+		var col = frameX + (spriteWidth * frameIndex);
+		var row = frameY;
 
 		if(faceRight)
 			ctx.drawImage(playerImage,
-				frameX, frameY, frameWidth, frameHeight,
+				col, row, spriteWidth, spriteHeight,
 				player.pos.x, player.pos.y, frameWidth, frameHeight);
 		else
-			ctx.drawImage(playerImage2,
-				frameX, frameY, frameWidth, frameHeight,
-				player.pos.x, player.pos.y, frameWidth, frameHeight);
+		{
+			ctx.save();
+			ctx.translate(player.pos.x + frameWidth, player.pos.y);
+			ctx.scale(-1, 1);
+			ctx.drawImage(playerImage,
+				col, row, spriteWidth, spriteHeight,
+				0, 0, frameWidth, frameHeight);
+			ctx.restore();
+		}
 	}
 
 	function handlePlayer(dt){
 
+		player.acc = new Victor(0,0);
+
     	// move right using 'd' key
-    	if(myKeys.keydown[myKeys.KEYBOARD.KEY_D]){
-    		player.vel.add(Victor(1,0));
+    	if(myKeys.keydown[myKeys.KEYBOARD.KEY_D] && !dead){
+    		player.acc.add(Victor(1,0));
 
     		spriteState = SPRITE_STATE.RUNNING;
     		faceRight = true;
     	}
 
     	// move left using 'a' key
-    	if(myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
-    		player.vel.add(Victor(-1,0));
+    	if(myKeys.keydown[myKeys.KEYBOARD.KEY_A] && !dead){
+    		player.acc.add(Victor(-1,0));
 
     		spriteState = SPRITE_STATE.RUNNING;
     		faceRight = false;
     	}
 
     	// jump using 'w' key
-	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
-	  		if (player.jump < 300){
-	  			player.pos.y -= 10;
+	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_W] && !dead){
+	  		if (player.jump < 300 && !myKeys.keydown[myKeys.KEYBOARD.KEY_S]){
+	  			player.pos.y -= 11;
 	  		}
 	  		player.jump += 10;
 
-	  		spriteState = SPRITE_STATE.JUMPING;
+	  		// spriteState = SPRITE_STATE.JUMPING;
 	  		grounded = false;
 	  	}
 
 	  	// crouching down with 's' key
-	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_S]){
+	  	if(myKeys.keydown[myKeys.KEYBOARD.KEY_S] && !dead){
 
 	  		player.speed = 0;
 	  		spriteState = SPRITE_STATE.CROUCHING;
 	  	}
 	  	else
-	  		player.speed = 5;
+	  		player.speed = 3;
 
-		// this.player.vel.normalize();
-		// this.player.vel.multiplyScalar(this.player.speed);
+		player.acc.multiplyScalar(player.speed);
+		player.vel.add(player.acc);
+
+		if(player.vel.magnitude() > player.maxSpeed)
+		{
+			player.vel.normalize();
+			player.vel.multiplyScalar(player.maxSpeed);
+		}
+
 		player.vel.multiplyScalar(player.friction);
 		player.pos.add(player.vel);
 
-		if(player.pos.y < app.main.canvas.height - frameHeight){
+		if(player.pos.y < app.main.canvas.height){
 			player.pos.y += 6;
 		}
 
-		if(player.pos.y >= app.main.canvas.height - frameHeight){
-			grounded = true;
+		if(player.pos.y >= app.main.canvas.height){
+			player.health = 0;
 		}
 
 		if(grounded == true){
 			player.jump = 0;
+		}
+		else
+		{
+			spriteState = SPRITE_STATE.JUMPING;
 		}
 
 		if(player.pos.x < 0){
@@ -148,52 +172,30 @@ app.player = (function(){
 			grounded = false;
 		}
 
-		/*var enemyPos = app.main.enemy.findEnemy();
-		var enemyWidth =  enemyPos.x + 110;
-		var enemyHeight = enemyPos.y + 110;
-		var playerWidth = player.pos.x + frameWidth;
-		var playerHeight = player.pos.y + frameHeight;
-		if(enemyWidth >= player.pos.x && enemyPos.x <= playerWidth && enemyHeight >= player.pos.y && enemyPos.y <= playerHeight){
-			if(playerWidth >= enemyPos.x && player.pos.x < enemyPos.x && player.pos.y < enemyHeight && playerHeight >= enemyHeight){
-				player.pos.x = enemyPos.x - frameWidth;
-			}
-			else if(playerWidth >= enemyWidth && player.pos.x < enemyWidth && player.pos.y <= enemyPos.y && playerHeight > enemyPos.y){
-				player.pos.x = enemyWidth;
-			}
-			else if(playerWidth >= enemyPos.x && player.pos.x < enemyPos.x && playerHeight < enemyPos.y){
-				player.pos.x = enemyPos.x - frameWidth;
-			}
-			else if(playerWidth >= enemyWidth && player.pos.x < enemyWidth && playerHeight < enemyPos.y){
-				player.pos.x = enemyWidth;
-			}
-			else if(player.pos.y < enemyHeight && playerHeight >= enemyHeight){
-				player.pos.y = enemyHeight;
-			}
-			else if(player.pos.y <= enemyPos.y && playerHeight > enemyPos.y){
-				player.pos.y = enemyPos.y - frameHeight;
-				grounded = true;
-			}
-		}*/
+		if(player.health <= 0)
+		{
+			dead = true;
+			spriteState = SPRITE_STATE.DYING;
+		}
 
+		if(dead)
+		{
+			deadTimer += 1;
+			if(deadTimer > deadCap)
+				over = true;
+		}
 	}
 
 	function handleFrameIndex()
 	{
 		// sprite animation
-
-		tickCount += 1;
-
-		if(tickCount >= ticksPerFrame)
-		{
-			tickCount = 0;
-			frameIndex += 1;
-		}
+		frameIndex += 1;
 
 		// frameIndex += 1;
 
-		if(frameIndex > frameEndIndex)
+		if(frameIndex >= frameCap)
 		{
-			frameIndex = frameStartIndex;
+			frameIndex = 0;
 		}
 	}
 
@@ -201,41 +203,56 @@ app.player = (function(){
 	{
 		if(spriteState == SPRITE_STATE.IDLE)
 		{
-			frameStartIndex = 11;
-			frameEndIndex = 11;
+			frameX = 95;
+			frameY = 0;
+			frameCap = 1;
+			spriteWidth = 110;
+			spriteHeight = 120;
 		}
 
 		if(spriteState == SPRITE_STATE.RUNNING)
 		{
-			frameStartIndex = 18;
-			frameEndIndex = 23;
+			frameX = 705;
+			frameY = 410;
+			frameCap = 1;
+			spriteWidth = 155;
+			spriteHeight = 90;
 		}
 
 		if(spriteState == SPRITE_STATE.JUMPING)
 		{
-			frameStartIndex = 26;
-			frameEndIndex = 26;
-
-			if(frameIndex == frameEndIndex)
-			{
-				// spriteState == SPRITE_STATE.IDLE;
-			}
+			frameX = 150;
+			frameY = 140;
+			frameCap = 1;
+			spriteWidth = 150;
+			spriteHeight = 130;
 		}
 
 		if(spriteState == SPRITE_STATE.CROUCHING)
 		{
-			frameStartIndex = 27;
-			frameEndIndex = 27;
+			frameX = 945;
+			frameY = 10;
+			frameCap = 1;
+			spriteWidth = 125; 
+			spriteHeight = 120;
 		}
 
 		if(spriteState == SPRITE_STATE.THROWING)
 		{
-
+			frameX = 290;
+			frameY = 675;
+			frameCap = 1;
+			spriteWidth = 170;
+			spriteHeight = 120;
 		}
 
 		if(spriteState == SPRITE_STATE.DYING)
 		{
-
+			frameX = 250;
+			frameY = 920;
+			frameCap = 1;
+			spriteWidth = 120;
+			spriteHeight = 120;
 		}
 	}
 
@@ -275,7 +292,7 @@ app.player = (function(){
 	//Getter for player position
 	function findPlayer()
 	{
-		return player.pos;
+		return new Victor(player.pos.x + (frameWidth/2), player.pos.y + (frameHeight/2));
 	}
 
 	//Getter for player health
@@ -284,10 +301,23 @@ app.player = (function(){
 		return player.health;
 	}
 
+	function isOver()
+	{
+		return over;
+	}
+
 	//Setter for player health
 	function setPlayerHealth(newHealth)
 	{
-		player.health -= newHealth;
+		var damage = newHealth;
+
+		if(spriteState == SPRITE_STATE.CROUCHING)
+			damage -= 4;
+
+		if(damage < 0)
+			damage = 0;
+
+		player.health -= damage;
 	}
 
 	function handleProjectiles(ctx)
@@ -310,16 +340,19 @@ app.player = (function(){
 
 			c.pos.add(c.vel);
 
-			ctx.save();
-			ctx.strokeStyle = "black";
-			ctx.lineWidth = 3;
-			ctx.lineCap = "rounded";
-			ctx.beginPath();
-			ctx.moveTo(c.pos.x, c.pos.y);
-			ctx.lineTo((c.pos.x + c.vel.x), (c.pos.y + c.vel.y));
-			ctx.closePath();
-			ctx.stroke();
-			ctx.restore();
+			// handle sprite animation
+			ctx.drawImage(playerImage, c.frameX + (c.frameIndex * c.frameWidth), c.frameY, c.frameWidth, c.frameHeight, c.pos.x, c.pos.y, c.frameWidth, frameHeight);
+
+			c.tick += 1;
+			if(c.tick >= c.tickCap)
+			{
+				c.tick = 0;
+				c.frameIndex += 1;
+				if(c.frameIndex >= c.frameCap)
+				{
+					c.frameIndex = 0;
+				}
+			}
 		}
 
 		//Detect collsions between projectile and enemy
@@ -337,28 +370,46 @@ app.player = (function(){
 			{
 				//Decrease enemy health and remove projectile
 				app.main.enemy.setEnemyHealth(10);
+				createjs.Sound.play("impact");
 				projectiles.splice(i, 1);
 			}
 		}
 	}
 
-	var fireProjectile = function(x, y)
+	function fireProjectile(x, y)
 	{
-		if(canFire)
+		if(canFire && spriteState != SPRITE_STATE.JUMPING && spriteState != SPRITE_STATE.CROUCHING)
 		{
 			var projectile = {};
 			projectile.pos = new Victor(player.pos.x, player.pos.y);
 			projectile.vel = new Victor(x - player.pos.x, y - player.pos.y);
-			projectile.speed = 5;
+			projectile.speed = fireSpeed;
 
 			// recalculate speed;
 			projectile.vel.normalize();
 			projectile.vel.multiplyScalar(projectile.speed);
 
+			// sprite animation variables
+			projectile.frameX = 465;
+			projectile.frameY = 704;
+			projectile.frameWidth = 34;
+			projectile.frameHeight = 34;
+			projectile.frameIndex = 0;
+			projectile.frameCap = 4;
+			projectile.tick = 0;
+			projectile.tickCap = 4;
+
 			Object.seal(projectile);
 			projectiles.push(projectile);
 			canFire = false;
+			createjs.Sound.play("batarang");
+			// spriteState = SPRITE_STATE.THROWING;
 		}
+	}
+
+	function setLevel(level)
+	{
+		fireCap = (level * 5);
 	}
 
 	  return{
@@ -371,6 +422,8 @@ app.player = (function(){
 			findPlayerHealth: findPlayerHealth,
 			setPlayerHealth: setPlayerHealth,
 			fireProjectile: fireProjectile,
+			setLevel: setLevel,
+			isOver: isOver,
 	  };
 
 }());

@@ -18,11 +18,15 @@ var app = app || {};
  app.main = {
   // game state properties
   gameState: undefined,
-  roundScore: 0,
-  totalScore: 0,
+  
+  // this controls difficulty
+  roundIndex: 0,
 
-  // new property for sound module
-  // sound: undefined, // required - loaded by main.js
+  // background
+  background: new Image(),
+ //  this.background.src: "media/background.png",
+
+  sound: undefined, // required - loaded by main.js
 
   // property for player module
   player: undefined,
@@ -55,6 +59,7 @@ var app = app || {};
       VICTORY: 3,
       LOST: 4,
       END: 5,
+      CONTROLS: 6,
     }),
 
     // methods
@@ -69,14 +74,21 @@ var app = app || {};
     // initialize gameState
     this.gameState = this.GAME_STATE.BEGIN;
 
+    this.background.src = "media/background.png";
+
     // hook up events
     this.canvas.onmousedown = this.doMouseDown.bind(this);
 
     // load level
     //this.reset();
+    this.roundIndex = 0;
+    this.player.setLevel(this.roundIndex);
+    this.enemy.setLevel(this.roundIndex);
 
     this.player.createPlayer();
     this.enemy.createEnemy();
+    //Create Platforms
+    this.manager.createPlatforms();
 
 		// start the game loop
 		this.update();
@@ -84,7 +96,13 @@ var app = app || {};
 
   // STUB: resets level
   reset: function(){
-    this.gameState = this.GAME_STATE.BEGIN;
+    if(this.roundIndex == 0)
+      this.gameState = this.GAME_STATE.BEGIN;
+    else
+      this.gameState = this.GAME_STATE.DEFAULT;
+
+    this.player.setLevel(this.roundIndex);
+    this.enemy.setLevel(this.roundIndex);
 
     this.player.createPlayer();
     this.enemy.createEnemy();
@@ -107,12 +125,14 @@ var app = app || {};
     // calculate delta time
     var dt = this.calculateDeltaTime();
 
-
     // i) draw background
-    this.ctx.fillStyle = "#6495ed";
-    this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
+    // this.ctx.fillStyle = "#6495ed";
+    // this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
 
-    if(this.gameState == this.GAME_STATE.BEGIN || this.gameState == this.GAME_STATE.INSTRUCTIONS || this.gameState == this.GAME_STATE.VICTORY || this.gameState == this.GAME_STATE.LOST){
+    this.ctx.drawImage(this.background, 0,0,1024,768);
+
+    if(this.gameState == this.GAME_STATE.BEGIN || this.gameState == this.GAME_STATE.INSTRUCTIONS || 
+        this.gameState == this.GAME_STATE.VICTORY || this.gameState == this.GAME_STATE.LOST || this.gameState == this.GAME_STATE.CONTROLS){
       this.drawHUD(this.ctx);
     } 
 
@@ -123,18 +143,6 @@ var app = app || {};
 
     if (this.gameState == this.GAME_STATE.DEFAULT)
     {
-      //Create Platforms
-      this.ctx.fillStyle = "red";
-      this.ctx.fillRect(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.ctx.fillRect(this.PLATFORMRIGHTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.ctx.fillRect(this.PLATFORMMIDX, 568, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.ctx.fillRect(this.PLATFORMLEFTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.ctx.fillRect(this.PLATFORMRIGHTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.ctx.fillRect(this.PLATFORMMIDX, 368, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.ctx.fillRect(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.ctx.fillRect(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.ctx.fillRect(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-
   		// iii) draw HUD
       this.ctx.globalAlpha = 1.0;
       this.drawHUD(this.ctx);
@@ -142,6 +150,9 @@ var app = app || {};
       //Handle player and enemy
       this.player.handlePlayer(this.dt);
       this.enemy.handleEnemy(this.dt);
+
+      //Check for collisions
+      this.manager.handlePlatforms(this.ctx);
 
       //Draw
       this.player.drawPlayer(this.ctx);
@@ -151,26 +162,15 @@ var app = app || {};
       this.player.handleProjectiles(this.ctx);
       this.enemy.handleProjectiles(this.ctx);
 
-      //Check for collisions
-      this.player.handleCollisions(this.PLATFORMLEFTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.player.handleCollisions(this.PLATFORMRIGHTX, 668, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.player.handleCollisions(this.PLATFORMMIDX, 568, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.player.handleCollisions(this.PLATFORMLEFTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.player.handleCollisions(this.PLATFORMRIGHTX, 468, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.player.handleCollisions(this.PLATFORMMIDX, 368, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.player.handleCollisions(this.PLATFORMLEFTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.player.handleCollisions(this.PLATFORMRIGHTX, 268, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-      this.player.handleCollisions(this.PLATFORMMIDX, 168, this.PLATFORMWIDTH, this.PLATFORMHEIGHT);
-
-
       //If the enemy is killed you wim
-      if(this.enemy.findEnemyHealth() == 0)
+      if(this.enemy.findEnemy().y > this.HEIGHT)
       {
-        this.gameState = this.GAME_STATE.VICTORY;
+        if(this.enemy.findEnemyHealth() <= 0)
+         this.gameState = this.GAME_STATE.VICTORY;
       }
 
       //If you die you lose
-      if(this.player.findPlayerHealth() == 0)
+      if(this.player.findPlayerHealth() <= 0 && this.player.isOver())
       {
         this.gameState = this.GAME_STATE.LOST;
       }
@@ -181,10 +181,10 @@ var app = app || {};
       	this.fillText(this.ctx, "dt: " + dt.toFixed(3), this.WIDTH - 150, this.HEIGHT - 10, "18pt courier", "white");
       }
     }
-	},
+  },
 
-	fillText: function(ctx, string, x, y, css, color) {
-		ctx.save();
+  fillText: function(ctx, string, x, y, css, color) {
+    ctx.save();
 		// https://developer.mozilla.org/en-US/docs/Web/CSS/font
 		ctx.font = css;
 		ctx.fillStyle = color;
@@ -217,7 +217,7 @@ var app = app || {};
   },
 
   doMouseDown: function(e){
-    // this.sound.playBGAudio();
+    this.sound.playBGAudio();
     var mouse = getMouse(e);
     // unpause on a click
     // just to make sure we never get stuck in a paused state
@@ -236,20 +236,41 @@ var app = app || {};
       this.gameState = this.GAME_STATE.INSTRUCTIONS;
     }
 
+    if(this.gameState == this.GAME_STATE.BEGIN && mouse.x > this.WIDTH/2 - 110 && mouse.x < this.WIDTH/2 + 95 && mouse.y > this.HEIGHT/2 + 45 && mouse.y < this.HEIGHT/2 + 105){
+      this.gameState = this.GAME_STATE.CONTROLS;
+    }
+
     if(this.gameState == this.GAME_STATE.INSTRUCTIONS && mouse.x > 40 && mouse.x < 270 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
       this.gameState = this.GAME_STATE.BEGIN;
     }
 
+    if(this.gameState == this.GAME_STATE.CONTROLS && mouse.x > 40 && mouse.x < 270 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
+      this.gameState = this.GAME_STATE.BEGIN;
+    }
+
     if(this.gameState == this.GAME_STATE.VICTORY && mouse.x > 40 && mouse.x < 270 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
+      this.roundIndex = 0;
+      this.reset();
+    }
+
+    if(this.gameState == this.GAME_STATE.VICTORY && mouse.x > this.WIDTH - 260 && mouse.x < this.WIDTH - 260 + 230 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
+      // start the level again
+      this.roundIndex += 1;
       this.reset();
     }
 
     if(this.gameState == this.GAME_STATE.LOST && mouse.x > 40 && mouse.x < 270 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
+      this.roundIndex = 0;
+      this.reset();
+    }
+
+    if(this.gameState == this.GAME_STATE.LOST && mouse.x > this.WIDTH - 260 && mouse.x < this.WIDTH - 260 + 230 && mouse.y > this.HEIGHT - 90 && mouse.y < this.HEIGHT - 30){
+      // start the next level
       this.reset();
     }
 
     //Fire batarangs when you click in game
-    if(this.gameState == this.GAME_STATE.DEFAULT)
+    if(this.gameState == this.GAME_STATE.DEFAULT && this.player.findPlayerHealth() > 0)
     {
       this.player.fireProjectile(mouse.x, mouse.y);
     }
@@ -277,44 +298,67 @@ var app = app || {};
       this.fillText(ctx, "Game", this.WIDTH/2, this.HEIGHT/2 - 105,"40pt Bangers", "red");
       this.fillText(ctx, "Instru", this.WIDTH/2 - 125, this.HEIGHT/2 - 30,"40pt Bangers", "yellow");
       this.fillText(ctx, "ctions", this.WIDTH/2, this.HEIGHT/2 - 30,"40pt Bangers", "red");
+      this.fillText(ctx, "Cont", this.WIDTH/2 - 95, this.HEIGHT/2 + 45,"40pt Bangers", "yellow");
+      this.fillText(ctx, "rols", this.WIDTH/2, this.HEIGHT/2 + 45,"40pt Bangers", "red");
       ctx.strokeStyle = "white";
       ctx.lineWidth = 3;
       ctx.strokeRect(this.WIDTH/2 - 100, this.HEIGHT/2 - 110, 205, 60);
       ctx.strokeRect(this.WIDTH/2 - 130, this.HEIGHT/2 - 30, 270, 60);
+      ctx.strokeRect(this.WIDTH/2  - 110, this.HEIGHT/2 + 45, 205, 60);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       this.fillText(ctx, "By: Paul Lampanaro and Gregory McClellan", 225, this.HEIGHT - 50,"20pt Bangers", "yellow");
       this.fillText(ctx, "Batman and Superman are trademarked by DC, we do not own the characters", 300, this.HEIGHT - 20,"15pt Bangers", "white");
     }
 
-    //Instructions Screen
+    // instructions
     if(this.gameState == this.GAME_STATE.INSTRUCTIONS){
-      ctx.save();
       ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT)
+      ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeStyle = "yellow";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(40, this.HEIGHT - 90, 230, 60);
+      this.fillText(ctx, "Controls", this.WIDTH/2, this.HEIGHT/2 - 250,"80pt Bangers", "yellow");
+      this.fillText(ctx, "Use A and D to move left and right", this.WIDTH/2, this.HEIGHT/2 - 80,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Use W to jump", this.WIDTH/2, this.HEIGHT/2,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Use S to crouch", this.WIDTH/2, this.HEIGHT/2 + 80,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Left click to throw Batarang", this.WIDTH/2, this.HEIGHT/2 + 160,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Press P to pause", this.WIDTH/2, this.HEIGHT/2 + 240,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "yellow");
+    }
+
+    //Instructions Screen
+    if(this.gameState == this.GAME_STATE.CONTROLS){
+      console.log("Uh");
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.strokeStyle = "yellow";
       ctx.lineWidth = 3;
       ctx.strokeRect(40, this.HEIGHT - 90, 230, 60);
       this.fillText(ctx, "Instructions", this.WIDTH/2, this.HEIGHT/2 - 250,"80pt Bangers", "yellow");
-      this.fillText(ctx, "Use A and D to move left and right", this.WIDTH/2, this.HEIGHT/2 - 80,"40pt Bangers", "yellow");
-      this.fillText(ctx, "Use W to jump", this.WIDTH/2, this.HEIGHT/2,"40pt Bangers", "yellow");
-      this.fillText(ctx, "Click to throw Batarang", this.WIDTH/2, this.HEIGHT/2 + 80,"40pt Bangers", "yellow");
-      this.fillText(ctx, "Click off screen to pause", this.WIDTH/2, this.HEIGHT/2 + 160,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Take down Superman!", this.WIDTH/2, 180 + 50, "20pt Bangers", "yellow");
+      this.fillText(ctx, "Hit Superman with your Kryptonite Batarangs while avoiding his attacks.", this.WIDTH/2, 220 + 50, "20pt Bangers", "yellow");
+      this.fillText(ctx, "Crouching will reduce damage from lasers and will negate damage from frost breath,", this.WIDTH/2, 260 + 50, "20pt Bangers", "yellow");
+      this.fillText(ctx, "But will also keep you from moving", this.WIDTH/2, 300 + 50, "20pt Bangers", "yellow");
+      this.fillText(ctx, "Falling off the screen will kill you.", this.WIDTH/2, 340 + 50, "20pt Bangers", "yellow");
+      this.fillText(ctx, "Each round will increase Superman's rate of fire and damage,", this.WIDTH/2, 380 + 50, "20pt Bangers", "yellow");
+      this.fillText(ctx, "Your rate of fire will be reduced and Superman will be more likely to blitz you.", this.WIDTH/2, 420 + 50, "20pt Bangers", "yellow");
       this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "yellow");
     }
 
     //In game hud
     if(this.gameState == this.GAME_STATE.DEFAULT){
-      ctx.save();
       this.fillText(ctx, "Batman Health: " + this.player.findPlayerHealth(), 20, 60,"30pt Bangers", "white");
+      this.fillText(ctx, "Round: " + this.roundIndex, this.WIDTH/2 - 100, 60, "30pt Bangers", "white");
       this.fillText(ctx, "Superman Health: " + this.enemy.findEnemyHealth(), this.WIDTH - 375, 60,"30pt Bangers", "white");
     }
 
     //Win Screen
     if(this.gameState == this.GAME_STATE.VICTORY){
-      ctx.save();
       ctx.fillStyle = "black";
       ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT)
       ctx.textAlign = "center";
@@ -322,13 +366,14 @@ var app = app || {};
       ctx.strokeStyle = "yellow";
       ctx.lineWidth = 3;
       ctx.strokeRect(40, this.HEIGHT - 90, 230, 60);
+      ctx.strokeRect(this.WIDTH - 260, this.HEIGHT - 90, 230, 60);
       this.fillText(ctx, "You Won!", this.WIDTH/2, this.HEIGHT/2,"80pt Bangers", "yellow");
       this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "yellow");
+      this.fillText(ctx, "Next Round", this.WIDTH - 150, this.HEIGHT - 60, "40pt Bangers", "yellow");
     }
 
     // game over screen
     if(this.gameState == this.GAME_STATE.LOST){
-      ctx.save();
       ctx.fillStyle = "blue";
       ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT)
       ctx.textAlign = "center";
@@ -336,8 +381,10 @@ var app = app || {};
       ctx.strokeStyle = "red";
       ctx.lineWidth = 3;
       ctx.strokeRect(40, this.HEIGHT - 90, 230, 60);
+      ctx.strokeRect(this.WIDTH - 260, this.HEIGHT - 90, 230, 60);
       this.fillText(ctx, "You Lost!", this.WIDTH/2, this.HEIGHT/2,"80pt Bangers", "red");
       this.fillText(ctx, "Main Menu", 150, this.HEIGHT - 60,"40pt Bangers", "red");
+      this.fillText(ctx, "Try Again", this.WIDTH - 150, this.HEIGHT - 60, "40pt Bangers", "red");
     }
 
     ctx.restore();
@@ -365,11 +412,11 @@ var app = app || {};
     this.update();
 
     // restart audio
-    // this.sound.playBGAudio();
+    this.sound.playBGAudio();
   },
 
   stopBGAudio: function(){
-    // this.sound.stopBGAudio();
+    this.sound.stopBGAudio();
   },
 
   toggleDebug: function(){

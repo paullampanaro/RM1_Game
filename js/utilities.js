@@ -108,4 +108,12 @@ function circlesIntersect(c1, c2){
 	return distance < c1.radius + c2.radius;
 }
 
+/*
+Function Name: getRandomInt(min, max)
+Return Value: a random integer between min and max
+*/
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 
