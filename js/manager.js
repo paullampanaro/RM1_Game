@@ -14,12 +14,13 @@ app.manager = (function(){
 
 	var platforms = [];
 
-	var platformImage = new Image();
-	platformImage.src = "media/platform.png";
+	var platformImage;
 
 	// functions
 	function createPlatforms()
 	{
+		platformImage = app.queue.getResult("platformImage");
+		
 		var createPlatform = function(xPos, yPos)
 		{
 			var c = {};

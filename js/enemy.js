@@ -5,8 +5,7 @@ var app = app || {};
 app.enemy = (function(){
 
 	var enemy = {};
-	var enemyImage = new Image();
-	enemyImage.src = "media/superman.png";
+	var enemyImage; 
 
 	var projectiles = [];
 	var fireTimer = 0;
@@ -57,6 +56,7 @@ app.enemy = (function(){
 
 	function createEnemy()
 	{
+		enemyImage = app.queue.getResult("supermanImage");
 		projectiles = [];
 		spriteState = SPRITE_STATE.IDLE;
 		randomTarget = new Victor(Math.random() * app.main.canvas.width, Math.random() * app.main.canvas.height);

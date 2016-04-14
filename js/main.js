@@ -23,16 +23,13 @@ var app = app || {};
   roundIndex: 0,
 
   // background
-  background: new Image(),
- //  this.background.src: "media/background.png",
+  background: undefined,
+  backgroundMusic: undefined,
 
-  sound: undefined, // required - loaded by main.js
-
-  // property for player module
+  // modules
   player: undefined,
   enemy: undefined,
-
-  //property for manager module
+  queue: undefined,
   manager: undefined,
 
   PLATFORMWIDTH: 200,
@@ -74,7 +71,8 @@ var app = app || {};
     // initialize gameState
     this.gameState = this.GAME_STATE.BEGIN;
 
-    this.background.src = "media/background.png";
+    this.background = app.queue.getResult("backgroundImage");
+	this.backgroundMusic = createjs.Sound.play("background",{loop:-1, volume:0.4});
 
     // hook up events
     this.canvas.onmousedown = this.doMouseDown.bind(this);
@@ -217,7 +215,6 @@ var app = app || {};
   },
 
   doMouseDown: function(e){
-    this.sound.playBGAudio();
     var mouse = getMouse(e);
     // unpause on a click
     // just to make sure we never get stuck in a paused state
@@ -412,11 +409,11 @@ var app = app || {};
     this.update();
 
     // restart audio
-    this.sound.playBGAudio();
+    this.backgroundMusic.resume();
   },
 
   stopBGAudio: function(){
-    this.sound.stopBGAudio();
+    this.backgroundMusic.pause();
   },
 
   toggleDebug: function(){

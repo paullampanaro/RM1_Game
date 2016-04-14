@@ -10,13 +10,10 @@ the game will be properties of app.
 // else create a new empty object literal
 var app = app || {};
 
-
 window.onload = function(){
 	console.log("window.onload called");
-
+	
 	// this the sandbox
-	app.sound.init();
-	app.main.sound = app.sound;
 	app.main.player = app.player;
 	app.main.manager = app.manager;
 	app.main.enemy = app.enemy;
@@ -34,12 +31,14 @@ window.onload = function(){
      {id:"batmanImage", src:"media/batmanAlt.png"},
      {id:"supermanImage", src:"media/superman.png"},
      {id:"platformImage", src:"media/platform.png"},
+	 {id:"backgroundImage", src:"media/background.png"},
      {id:"batarang", src:"media/batarang.mp3"},
 	 {id:"breath", src:"media/breath.mp3"},
 	 {id:"hit", src:"media/hit.mp3"},
 	 {id:"impact", src:"media/impact.mp3"},
 	 {id:"laser", src:"media/laser.mp3"},
 	 {id:"laserSpecial", src:"media/laserSpecial.mp3"},
+	 {id:"background", src:"media/fightnight.mp3"},
 	]);
 
 	window.onblur = function()

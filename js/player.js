@@ -6,8 +6,7 @@ var app = app || {};
 app.player = (function(){
 
 	var player = {};
-	var playerImage = new Image();
-	playerImage.src = "media/batmanAlt.png";
+	var playerImage;
 
 	var projectiles = [];
 	var canFire = false;
@@ -49,10 +48,12 @@ app.player = (function(){
 
 	function createPlayer(){
 
+		playerImage = app.queue.getResult("batmanImage");
 		over = false;
 		dead = false;
 		deadTimer = 0;
 		projectiles = [];
+		
 		player.pos = new Victor (app.main.canvas.width/2, app.main.canvas.height - frameHeight - 240);
 		player.vel = new Victor(0,0);
 		player.speed = 3;
